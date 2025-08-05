@@ -1,0 +1,114 @@
+{
+  "validBookings": [
+    {
+      "start_date": "2024-02-01",
+      "end_date": "2024-02-04", 
+      "total_days": 3,
+      "total_amount": 75.00,
+      "deposit_amount": 200.00,
+      "delivery_required": false,
+      "notes": "Short-term rental for weekend project"
+    },
+    {
+      "start_date": "2024-02-05",
+      "end_date": "2024-02-12",
+      "total_days": 7, 
+      "total_amount": 150.00,
+      "deposit_amount": 300.00,
+      "delivery_required": true,
+      "delivery_address": "123 Main St, San Francisco, CA 94102",
+      "notes": "Weekly rental with delivery requested"
+    },
+    {
+      "start_date": "2024-03-01",
+      "end_date": "2024-03-31",
+      "total_days": 30,
+      "total_amount": 500.00,
+      "deposit_amount": 1000.00,
+      "delivery_required": false,
+      "pickup_instructions": "Pickup from garage, ring doorbell",
+      "notes": "Long-term rental for extended project"
+    }
+  ],
+  "invalidBookings": [
+    {
+      "start_date": "2023-01-01", 
+      "end_date": "2023-01-02",
+      "total_days": 1,
+      "total_amount": 25.00,
+      "expectedError": "past dates"
+    },
+    {
+      "start_date": "2024-02-10",
+      "end_date": "2024-02-05",
+      "total_days": -5,
+      "total_amount": 25.00,
+      "expectedError": "invalid date range"
+    },
+    {
+      "start_date": "2024-02-15",
+      "end_date": "2024-02-16", 
+      "total_days": 1,
+      "total_amount": -25.00,
+      "expectedError": "negative amount"
+    }
+  ],
+  "statusUpdates": [
+    {
+      "status": "confirmed",
+      "notes": "Booking confirmed by owner"
+    },
+    {
+      "status": "active",
+      "notes": "Item picked up, rental started"
+    },
+    {
+      "status": "completed",
+      "notes": "Item returned successfully"
+    },
+    {
+      "status": "cancelled", 
+      "notes": "Booking cancelled by user"
+    }
+  ],
+  "ratings": [
+    {
+      "rating": 5,
+      "feedback": "Excellent item and smooth rental process. Highly recommended!",
+      "communication_rating": 5,
+      "item_condition_rating": 5
+    },
+    {
+      "rating": 4,
+      "feedback": "Good experience overall. Item worked as expected.",
+      "communication_rating": 4,
+      "item_condition_rating": 4
+    },
+    {
+      "rating": 3,
+      "feedback": "Average experience. Item was okay but could be better maintained.",
+      "communication_rating": 3,
+      "item_condition_rating": 3
+    },
+    {
+      "rating": 2,
+      "feedback": "Item condition was not as described. Communication could be improved.",
+      "communication_rating": 2,
+      "item_condition_rating": 2
+    },
+    {
+      "rating": 1,
+      "feedback": "Very poor experience. Item was damaged and owner was unresponsive.",
+      "communication_rating": 1,
+      "item_condition_rating": 1
+    }
+  ],
+  "statuses": [
+    "pending",
+    "confirmed", 
+    "active",
+    "completed",
+    "cancelled",
+    "disputed"
+  ]
+}

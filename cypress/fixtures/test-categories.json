@@ -1,0 +1,136 @@
+{
+  "mainCategories": [
+    {
+      "name": "Electronics",
+      "description": "Electronic devices, gadgets, and tech equipment",
+      "icon": "electronics",
+      "color": "#3B82F6",
+      "is_active": true,
+      "display_order": 1
+    },
+    {
+      "name": "Sports & Recreation", 
+      "description": "Sports equipment, recreational gear, and outdoor activities",
+      "icon": "sports",
+      "color": "#10B981",
+      "is_active": true,
+      "display_order": 2
+    },
+    {
+      "name": "Tools & Equipment",
+      "description": "Professional tools, construction equipment, and machinery", 
+      "icon": "tools",
+      "color": "#F59E0B",
+      "is_active": true,
+      "display_order": 3
+    },
+    {
+      "name": "Home & Garden",
+      "description": "Home improvement items, gardening tools, and household equipment",
+      "icon": "home",
+      "color": "#8B5CF6", 
+      "is_active": true,
+      "display_order": 4
+    },
+    {
+      "name": "Vehicles",
+      "description": "Cars, bikes, motorcycles, and transportation equipment",
+      "icon": "vehicle",
+      "color": "#EF4444",
+      "is_active": true,
+      "display_order": 5
+    }
+  ],
+  "subcategories": {
+    "Electronics": [
+      {
+        "name": "Computers & Laptops",
+        "description": "Desktop computers, laptops, and computer accessories",
+        "icon": "computer",
+        "display_order": 1
+      },
+      {
+        "name": "Cameras & Photography", 
+        "description": "Digital cameras, lenses, and photography equipment",
+        "icon": "camera",
+        "display_order": 2
+      },
+      {
+        "name": "Audio Equipment",
+        "description": "Speakers, headphones, microphones, and audio gear",
+        "icon": "audio",
+        "display_order": 3
+      }
+    ],
+    "Sports & Recreation": [
+      {
+        "name": "Fitness Equipment",
+        "description": "Gym equipment, weights, and fitness accessories",
+        "icon": "fitness", 
+        "display_order": 1
+      },
+      {
+        "name": "Outdoor Sports",
+        "description": "Hiking, camping, and outdoor adventure gear",
+        "icon": "outdoor",
+        "display_order": 2
+      },
+      {
+        "name": "Water Sports",
+        "description": "Swimming, surfing, and water activity equipment",
+        "icon": "water",
+        "display_order": 3
+      }
+    ]
+  },
+  "testCategories": [
+    {
+      "name": "Test Category for E2E",
+      "description": "This is a test category created during E2E testing",
+      "icon": "test",
+      "color": "#FF6B6B",
+      "is_active": true,
+      "display_order": 100
+    },
+    {
+      "name": "Minimal Test Category",
+      "description": "Minimal category for testing"
+    }
+  ],
+  "invalidCategories": [
+    {
+      "name": "",
+      "description": "Category with empty name",
+      "expectedError": "name"
+    },
+    {
+      "name": "Empty Description Category",
+      "description": "",
+      "expectedError": "description"
+    },
+    {
+      "name": "Invalid Color Category",
+      "description": "Category with invalid color format",
+      "color": "invalid-color",
+      "expectedError": "color"
+    }
+  ],
+  "searchQueries": [
+    {
+      "query": "Electronics",
+      "expectedResults": "should find electronics category"
+    },
+    {
+      "query": "Sport", 
+      "expectedResults": "should find sports categories"
+    },
+    {
+      "query": "equipment",
+      "expectedResults": "should find categories with equipment in description"
+    },
+    {
+      "query": "NonExistentCategory12345",
+      "expectedResults": "should return empty results"
+    }
+  ]
+}

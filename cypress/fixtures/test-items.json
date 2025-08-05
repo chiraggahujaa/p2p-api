@@ -1,0 +1,96 @@
+{
+  "validItems": [
+    {
+      "name": "MacBook Pro 16-inch",
+      "description": "High-performance laptop perfect for work and creative projects. Includes charger and carrying case.",
+      "category": "Electronics",
+      "price_per_day": 25.00,
+      "price_per_week": 150.00,
+      "price_per_month": 500.00,
+      "location": "San Francisco, CA",
+      "condition": "like_new",
+      "deposit_amount": 1000.00,
+      "minimum_rental_days": 1,
+      "maximum_rental_days": 30,
+      "delivery_available": true,
+      "delivery_fee": 15.00,
+      "tags": ["laptop", "macbook", "work", "creative"]
+    },
+    {
+      "name": "Canon EOS R5 Camera",
+      "description": "Professional mirrorless camera with 45MP sensor. Perfect for photography and videography.",
+      "category": "Electronics", 
+      "price_per_day": 50.00,
+      "price_per_week": 300.00,
+      "location": "Los Angeles, CA",
+      "condition": "good",
+      "deposit_amount": 2000.00,
+      "minimum_rental_days": 1,
+      "maximum_rental_days": 14,
+      "delivery_available": false,
+      "tags": ["camera", "photography", "video", "professional"]
+    },
+    {
+      "name": "Mountain Bike",
+      "description": "Full suspension mountain bike suitable for trails and city riding.",
+      "category": "Sports & Recreation",
+      "price_per_day": 15.00,
+      "price_per_week": 90.00,
+      "location": "Denver, CO",
+      "condition": "good",
+      "deposit_amount": 200.00,
+      "minimum_rental_days": 1,
+      "maximum_rental_days": 7,
+      "delivery_available": true,
+      "delivery_fee": 10.00,
+      "tags": ["bike", "mountain", "outdoor", "recreation"]
+    }
+  ],
+  "invalidItems": [
+    {
+      "name": "",
+      "description": "Item with empty name",
+      "category": "Electronics",
+      "price_per_day": 10.00,
+      "location": "Test City",
+      "condition": "good",
+      "expectedError": "name"
+    },
+    {
+      "name": "Negative Price Item",
+      "description": "Item with negative price",
+      "category": "Electronics", 
+      "price_per_day": -10.00,
+      "location": "Test City",
+      "condition": "good",
+      "expectedError": "price"
+    },
+    {
+      "name": "Invalid Condition Item",
+      "description": "Item with invalid condition",
+      "category": "Electronics",
+      "price_per_day": 10.00,
+      "location": "Test City", 
+      "condition": "invalid_condition",
+      "expectedError": "condition"
+    }
+  ],
+  "categories": [
+    "Electronics",
+    "Sports & Recreation", 
+    "Tools & Equipment",
+    "Home & Garden",
+    "Vehicles",
+    "Fashion & Accessories",
+    "Books & Media",
+    "Toys & Games",
+    "Other"
+  ],
+  "conditions": [
+    "new",
+    "like_new", 
+    "good",
+    "fair",
+    "poor"
+  ]
+}

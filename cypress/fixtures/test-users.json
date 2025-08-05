@@ -1,0 +1,65 @@
+{
+  "validUsers": [
+    {
+      "email": "test.user1@example.com",
+      "password": "TestPassword123!",
+      "name": "Test User One",
+      "phone": "+1234567890",
+      "location": "San Francisco, CA",
+      "bio": "First test user for API testing"
+    },
+    {
+      "email": "test.user2@example.com", 
+      "password": "TestPassword456!",
+      "name": "Test User Two",
+      "phone": "+1234567891",
+      "location": "New York, NY",
+      "bio": "Second test user for interaction testing"
+    },
+    {
+      "email": "admin.user@example.com",
+      "password": "AdminPassword789!",
+      "name": "Admin User",
+      "phone": "+1234567892",
+      "location": "Los Angeles, CA",
+      "bio": "Admin user for testing admin functionality"
+    }
+  ],
+  "invalidUsers": [
+    {
+      "email": "invalid-email",
+      "password": "ValidPassword123!",
+      "name": "Invalid Email User",
+      "expectedError": "email"
+    },
+    {
+      "email": "weak.password@example.com",
+      "password": "123",
+      "name": "Weak Password User",  
+      "expectedError": "password"
+    },
+    {
+      "email": "empty.name@example.com",
+      "password": "ValidPassword123!",
+      "name": "",
+      "expectedError": "name"
+    }
+  ],
+  "bulkUsers": [
+    {
+      "email": "bulk1@example.com",
+      "password": "BulkPassword123!",
+      "name": "Bulk User 1"
+    },
+    {
+      "email": "bulk2@example.com", 
+      "password": "BulkPassword123!",
+      "name": "Bulk User 2"
+    },
+    {
+      "email": "bulk3@example.com",
+      "password": "BulkPassword123!",
+      "name": "Bulk User 3"
+    }
+  ]
+}
