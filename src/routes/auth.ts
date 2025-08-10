@@ -8,7 +8,12 @@ import {
   refreshTokenSchema,
   verifyEmailSchema,
   resetPasswordSchema,
-  updatePasswordSchema
+  updatePasswordSchema,
+  phoneLoginSchema,
+  phoneOtpVerificationSchema,
+  phoneUpdateSchema,
+  googleSignInSchema,
+  googleSignUpSchema
 } from '../validations/auth.js';
 
 const router = express.Router();
@@ -155,6 +160,143 @@ router.put('/password', authenticateToken, async (req: Request, res: Response) =
     updatePasswordSchema.parse(req.body);
     
     await AuthController.updatePassword(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// POST /api/auth/phone/send-otp - Send OTP to phone number
+router.post('/phone/send-otp', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    phoneLoginSchema.parse(req.body);
+    
+    await AuthController.sendPhoneOtp(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// POST /api/auth/phone/verify-otp - Verify OTP and login
+router.post('/phone/verify-otp', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    phoneOtpVerificationSchema.parse(req.body);
+    
+    await AuthController.verifyPhoneOtp(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// PUT /api/auth/phone - Update phone number (protected route)
+router.put('/phone', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    phoneUpdateSchema.parse(req.body);
+    
+    await AuthController.updatePhone(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// POST /api/auth/phone/verify-change - Verify phone number change
+router.post('/phone/verify-change', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    phoneOtpVerificationSchema.parse(req.body);
+    
+    await AuthController.verifyPhoneChange(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// Google OAuth Routes
+router.post('/google/signin', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    googleSignInSchema.parse(req.body);
+    
+    await AuthController.signInWithGoogle(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+router.post('/google/signup', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    googleSignUpSchema.parse(req.body);
+    
+    await AuthController.signUpWithGoogle(req, res);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({

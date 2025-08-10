@@ -184,3 +184,19 @@ export const getSupabasePublic = () => supabaseFactory.getPublicClient();
 
 // Health check export
 export const checkSupabaseHealth = () => supabaseFactory.healthCheck();
+
+// Google OAuth helper functions for backend use
+export const getGoogleOAuthUrl = (redirectTo?: string) => {
+  const client = supabaseFactory.getPublicClient();
+  return client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectTo || `${process.env.FRONTEND_URL}/auth/callback`,
+    },
+  });
+};
+
+export const handleGoogleOAuthCallback = async (code: string) => {
+  const client = supabaseFactory.getPublicClient();
+  return client.auth.exchangeCodeForSession(code);
+};

@@ -203,18 +203,33 @@ export const corsOptions = {
 // Request validation middleware
 export const validateContentType = (contentTypes: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (req.method === 'GET' || req.method === 'DELETE') {
+    const method = req.method?.toUpperCase();
+
+    // Skip validation for methods that do not have bodies by convention
+    if (method === 'GET' || method === 'DELETE' || method === 'HEAD' || method === 'OPTIONS') {
       return next();
     }
-    
-    const contentType = req.get('Content-Type');
-    if (!contentType || !contentTypes.some(type => contentType.includes(type))) {
+
+    // Only enforce Content-Type when there is actually a request body
+    const contentTypeHeader = req.get('Content-Type');
+    const contentLengthHeader = req.get('Content-Length');
+
+    const hasBodyByLength = contentLengthHeader !== undefined && contentLengthHeader !== null && Number.parseInt(String(contentLengthHeader), 10) > 0;
+    const hasParsedBody = typeof req.body === 'string' || (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0);
+    const hasBody = hasBodyByLength || hasParsedBody;
+
+    if (!hasBody) {
+      // Allow requests with no body (e.g., POST /logout) without requiring Content-Type
+      return next();
+    }
+
+    if (!contentTypeHeader || !contentTypes.some(type => contentTypeHeader.includes(type))) {
       return res.status(400).json({
         success: false,
         error: `Content-Type must be one of: ${contentTypes.join(', ')}`,
       });
     }
-    
+
     next();
   };
 };

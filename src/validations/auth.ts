@@ -50,3 +50,43 @@ export const deleteAccountSchema = z.object({
     message: 'Please type "DELETE" to confirm account deletion'
   }),
 });
+
+// Phone number validation
+export const phoneSchema = z
+  .string()
+  .min(10, 'Phone number must be at least 10 digits')
+  .max(15, 'Phone number must be less than 15 digits')
+  .regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone number format');
+
+// Phone login validation
+export const phoneLoginSchema = z.object({
+  phone: phoneSchema,
+});
+
+// OTP validation
+export const otpSchema = z.object({
+  otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must contain only numbers'),
+});
+
+// Phone OTP verification validation
+export const phoneOtpVerificationSchema = z.object({
+  phone: phoneSchema,
+  otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must contain only numbers'),
+});
+
+// Phone update validation (for authenticated users)
+export const phoneUpdateSchema = z.object({
+  phone: phoneSchema,
+});
+
+// Google OAuth validation schemas
+export const googleOAuthSchema = z.object({
+  idToken: z.string().min(1, 'ID token is required'),
+  accessToken: z.string().min(1, 'Access token is required').optional(),
+});
+
+// Google sign-in validation
+export const googleSignInSchema = googleOAuthSchema;
+
+// Google sign-up validation
+export const googleSignUpSchema = googleOAuthSchema;

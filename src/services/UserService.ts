@@ -58,7 +58,18 @@ export class UserService extends BaseService {
    */
   async updateUser(userId: string, userData: UpdateUserDto): Promise<ApiResponse<User>> {
     try {
-      const result = await this.update(userId, userData);
+      // Map camelCase DTO to snake_case DB columns
+      const updateData: Record<string, any> = {};
+      if (userData.fullName !== undefined) updateData.full_name = userData.fullName;
+      if (userData.phoneNumber !== undefined) updateData.phone_number = userData.phoneNumber;
+      if (userData.gender !== undefined) updateData.gender = userData.gender;
+      if (userData.dob !== undefined) updateData.dob = userData.dob;
+      if (userData.dobVisibility !== undefined) updateData.dob_visibility = userData.dobVisibility;
+      if (userData.bio !== undefined) updateData.bio = userData.bio;
+      if (userData.avatarUrl !== undefined) updateData.avatar_url = userData.avatarUrl;
+      updateData.updated_at = new Date().toISOString();
+
+      const result = await this.update(userId, updateData);
       return result;
     } catch (error) {
       console.error('Error updating user:', error);
