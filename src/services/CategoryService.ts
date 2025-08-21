@@ -4,6 +4,7 @@ import { BaseService } from './BaseService.js';
 import { supabaseAdmin } from '../utils/database.js';
 import { Category } from '../types/item.js';
 import { ApiResponse, PaginatedResponse } from '../types/common.js';
+import { DataMapper } from '../utils/mappers.js';
 
 export class CategoryService extends BaseService {
   constructor() {
@@ -19,7 +20,7 @@ export class CategoryService extends BaseService {
         .from('categories')
         .select(`
           *,
-          subcategories:d_categories!parent_category_id(*)
+          subcategories:categories!parent_category_id(*)
         `)
         .is('parent_category_id', null)
         .eq('is_active', true)
@@ -31,7 +32,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting categories with subcategories:', error);
@@ -61,7 +62,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting active categories:', error);
@@ -87,7 +88,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting subcategories:', error);
@@ -105,7 +106,7 @@ export class CategoryService extends BaseService {
         .select(`
           *,
           parent_category:parent_category_id(*),
-          subcategories:d_categories!parent_category_id(*)
+          subcategories:categories!parent_category_id(*)
         `)
         .eq('id', categoryId)
         .single();
@@ -122,7 +123,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
       console.error('Error getting category with relations:', error);
@@ -144,7 +145,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting popular categories:', error);
@@ -173,7 +174,7 @@ export class CategoryService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error searching categories:', error);
@@ -193,17 +194,25 @@ export class CategoryService extends BaseService {
     sortOrder?: number;
   }): Promise<ApiResponse<Category>> {
     try {
-      const result = await this.create({
-        category_name: categoryData.categoryName,
+      // Transform camelCase input to snake_case for database
+      const dbData = DataMapper.toSnakeCase({
+        categoryName: categoryData.categoryName,
         description: categoryData.description,
-        icon_url: categoryData.iconUrl,
-        banner_url: categoryData.bannerUrl,
-        parent_category_id: categoryData.parentCategoryId,
-        is_active: true,
-        sort_order: categoryData.sortOrder || 0,
+        iconUrl: categoryData.iconUrl,
+        bannerUrl: categoryData.bannerUrl,
+        parentCategoryId: categoryData.parentCategoryId,
+        isActive: true,
+        sortOrder: categoryData.sortOrder || 0,
       });
 
-      return result;
+      const result = await this.create(dbData);
+      
+      // Transform result back to camelCase
+      return {
+        success: result.success,
+        data: result.data ? DataMapper.toCamelCase(result.data) : result.data,
+        ...(result.error && { error: result.error }),
+      };
     } catch (error) {
       console.error('Error creating category:', error);
       throw error;
@@ -226,16 +235,23 @@ export class CategoryService extends BaseService {
     }
   ): Promise<ApiResponse<Category>> {
     try {
-      const result = await this.update(categoryId, {
-        category_name: categoryData.categoryName,
+      const dbData = DataMapper.toSnakeCase({
+        categoryName: categoryData.categoryName,
         description: categoryData.description,
-        icon_url: categoryData.iconUrl,
-        banner_url: categoryData.bannerUrl,
-        parent_category_id: categoryData.parentCategoryId,
-        sort_order: categoryData.sortOrder,
-        is_active: categoryData.isActive,
+        iconUrl: categoryData.iconUrl,
+        bannerUrl: categoryData.bannerUrl,
+        parentCategoryId: categoryData.parentCategoryId,
+        sortOrder: categoryData.sortOrder,
+        isActive: categoryData.isActive,
       });
-      return result;
+
+      const result = await this.update(categoryId, dbData);
+      
+      return {
+        success: result.success,
+        data: result.data ? DataMapper.toCamelCase(result.data) : result.data,
+        ...(result.error && { error: result.error }),
+      };
     } catch (error) {
       console.error('Error updating category:', error);
       throw error;

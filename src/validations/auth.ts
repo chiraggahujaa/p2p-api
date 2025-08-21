@@ -90,3 +90,7 @@ export const googleSignInSchema = googleOAuthSchema;
 
 // Google sign-up validation
 export const googleSignUpSchema = googleOAuthSchema;
+
+export const resendVerificationEmailSchema = z.object({
+  email: emailSchema,
+});

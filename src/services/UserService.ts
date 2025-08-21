@@ -2,6 +2,7 @@ import { BaseService } from './BaseService.js';
 import { supabaseAdmin } from '../utils/database.js';
 import { User, CreateUserDto, UpdateUserDto } from '../types/user.js';
 import { ApiResponse, PaginatedResponse } from '../types/common.js';
+import { DataMapper } from '../utils/mappers.js';
 
 export class UserService extends BaseService {
   constructor() {
@@ -30,20 +31,19 @@ export class UserService extends BaseService {
         locationId = locationData.id;
       }
 
-      // Create user
-      const userCreateData = {
-        full_name: userData.fullName,
+      const userCreateData = DataMapper.toSnakeCase({
+        fullName: userData.fullName,
         email: userData.email,
-        phone_number: userData.phoneNumber,
+        phoneNumber: userData.phoneNumber,
         gender: userData.gender,
         dob: userData.dob,
-        dob_visibility: userData.dobVisibility || 'private',
+        dobVisibility: userData.dobVisibility || 'private',
         bio: userData.bio,
-        location_id: locationId,
-        trust_score: 0,
-        is_verified: false,
-        is_active: true,
-      };
+        locationId: locationId,
+        trustScore: 0,
+        isVerified: false,
+        isActive: true,
+      });
 
       const result = await this.create(userCreateData);
       return result;
@@ -86,7 +86,7 @@ export class UserService extends BaseService {
         .from('users')
         .select(`
           *,
-          location:d_location(*)
+          location:location(*)
         `)
         .eq('id', userId)
         .single();
@@ -179,8 +179,8 @@ export class UserService extends BaseService {
         .from('item')
         .select(`
           *,
-          category:d_categories(category_name),
-          location:d_location(city, state),
+          category:categories(category_name),
+          location:location(city, state),
                       images:item_image(
             file:d_file(url, file_type),
             is_primary,
@@ -200,7 +200,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -258,7 +258,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -287,8 +287,8 @@ export class UserService extends BaseService {
           *,
           item:item(
             *,
-            category:d_categories(category_name),
-            location:d_location(city, state),
+            category:categories(category_name),
+            location:location(city, state),
             owner:users(full_name, avatar_url, trust_score)
           )
         `, { count: 'exact' })
@@ -304,7 +304,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -419,7 +419,7 @@ export class UserService extends BaseService {
           is_active,
           created_at,
           updated_at,
-          location:d_location(city, state)
+          location:location(city, state)
         `, { count: 'exact' })
         .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
         .eq('is_active', true)
@@ -434,7 +434,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,

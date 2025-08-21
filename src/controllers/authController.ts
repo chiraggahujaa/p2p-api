@@ -54,6 +54,7 @@ export class AuthController {
           data: {
             name,
           },
+          emailRedirectTo: `${process.env.FRONTEND_URL}/verify-email`,
         },
       });
 
@@ -728,6 +729,45 @@ export class AuthController {
       res.status(500).json({
         success: false,
         error: 'Failed to sign up with Google',
+      });
+    }
+  }
+
+  static async resendVerificationEmail(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required',
+        });
+      }
+
+      const { error } = await supabaseAdmin.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${process.env.FRONTEND_URL}/verify-email`,
+        },
+      });
+
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification email sent successfully',
+      });
+    } catch (error) {
+      console.error('Resend verification email error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
       });
     }
   }

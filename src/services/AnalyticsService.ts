@@ -3,6 +3,7 @@ import { BaseService } from './BaseService.js';
 import { supabaseAdmin } from '../utils/database.js';
 import { AnalyticsEvent, ItemMetrics, ItemAnalyticsSummary } from '../types/item.js';
 import { ApiResponse } from '../types/common.js';
+import { DataMapper } from '../utils/mappers.js';
 
 export class AnalyticsService extends BaseService {
   constructor() {
@@ -168,7 +169,7 @@ export class AnalyticsService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting item metrics:', error);
@@ -192,7 +193,7 @@ export class AnalyticsService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting popular items:', error);
@@ -229,7 +230,7 @@ export class AnalyticsService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting item events:', error);
@@ -336,7 +337,7 @@ export class AnalyticsService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting items dashboard:', error);

@@ -13,7 +13,8 @@ import {
   phoneOtpVerificationSchema,
   phoneUpdateSchema,
   googleSignInSchema,
-  googleSignUpSchema
+  googleSignUpSchema,
+  resendVerificationEmailSchema
 } from '../validations/auth.js';
 
 const router = express.Router();
@@ -297,6 +298,29 @@ router.post('/google/signup', async (req: Request, res: Response) => {
     googleSignUpSchema.parse(req.body);
     
     await AuthController.signUpWithGoogle(req, res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.issues,
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+
+// POST /api/auth/resend-verification - Resend verification email
+router.post('/resend-verification', async (req: Request, res: Response) => {
+  try {
+    // Validate request data with Zod
+    resendVerificationEmailSchema.parse(req.body);
+    
+    await AuthController.resendVerificationEmail(req, res);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({

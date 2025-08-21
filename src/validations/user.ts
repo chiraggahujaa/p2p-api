@@ -32,7 +32,7 @@ export const updateUserSchema = z.object({
   dob: z.string().date('Invalid date format (YYYY-MM-DD)').optional(),
   dobVisibility: userDobVisibilitySchema.optional(),
   bio: z.string().max(500, 'Bio must be less than 500 characters').optional(),
-  avatarUrl: urlSchema,
+  avatarUrl: urlSchema.optional(),
 }).refine(data => {
   if (data.dob) {
     const dobDate = new Date(data.dob);

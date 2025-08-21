@@ -5,6 +5,7 @@ import { supabaseAdmin } from '../utils/database.js';
 import { Booking, CreateBookingDto, BookingFilters } from '../types/booking.js';
 import { ApiResponse, PaginatedResponse, BookingStatus } from '../types/common.js';
 import { differenceInDays, parseISO, isBefore, isAfter } from 'date-fns';
+import { DataMapper } from '../utils/mappers.js';
 
 export class BookingService extends BaseService {
   constructor() {
@@ -376,7 +377,7 @@ export class BookingService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -442,7 +443,7 @@ export class BookingService extends BaseService {
           totalSpent: borrowerData.reduce((sum, b) => sum + (b.total_rent || 0), 0),
           averageRating: this.calculateAverageRating(borrowerData.map(b => b.rating_by_lender)),
         },
-        recentBookings: recentBookings.data || [],
+        recentBookings: DataMapper.toCamelCase(recentBookings.data || []),
       };
 
       return {

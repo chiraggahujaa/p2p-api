@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '../utils/database.js';
 import { ApiResponse, PaginatedResponse } from '../types/common.js';
+import { DataMapper } from '../utils/mappers.js';
 
 export interface PaginationOptions {
   page: number;
@@ -58,7 +59,7 @@ export class BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -97,7 +98,7 @@ export class BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
       console.error(`Error in ${this.tableName} findById:`, error);
@@ -122,7 +123,7 @@ export class BaseService {
 
       return {
         success: true,
-        data: result,
+        data: DataMapper.toCamelCase(result),
         message: 'Record created successfully',
       };
     } catch (error) {
@@ -155,7 +156,7 @@ export class BaseService {
 
       return {
         success: true,
-        data: result,
+        data: DataMapper.toCamelCase(result),
         message: 'Record updated successfully',
       };
     } catch (error) {
@@ -316,7 +317,7 @@ export class BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         message: `${records.length} records created successfully`,
       };
     } catch (error) {
@@ -342,7 +343,7 @@ export class BaseService {
 
       return {
         success: true,
-        data: result,
+        data: DataMapper.toCamelCase(result),
         message: 'Record upserted successfully',
       };
     } catch (error) {

@@ -4,6 +4,7 @@ import { BaseService, QueryOptions } from './BaseService.js';
 import { supabaseAdmin } from '../utils/database.js';
 import { Item, CreateItemDto, UpdateItemDto, ItemSearchFilters } from '../types/item.js';
 import { ApiResponse, PaginatedResponse } from '../types/common.js';
+import { DataMapper } from '../utils/mappers.js';
 
 export class ItemService extends BaseService {
   constructor() {
@@ -15,26 +16,25 @@ export class ItemService extends BaseService {
    */
   async createItem(userId: string, itemData: CreateItemDto): Promise<ApiResponse<Item>> {
     try {
-      // Create the item first
-      const itemCreateData = {
-        user_id: userId,
+      const itemCreateData = DataMapper.toSnakeCase({
+        userId,
         title: itemData.title,
         description: itemData.description,
-        category_id: itemData.categoryId,
+        categoryId: itemData.categoryId,
         condition: itemData.condition,
-        security_amount: itemData.securityAmount ?? 0,
-        rent_price_per_day: itemData.rentPricePerDay,
-        location_id: itemData.locationId,
-        delivery_mode: itemData.deliveryMode || 'both',
-        min_rental_days: itemData.minRentalDays || 1,
-        max_rental_days: itemData.maxRentalDays || 30,
-        is_negotiable: itemData.isNegotiable || false,
+        securityAmount: itemData.securityAmount ?? 0,
+        rentPricePerDay: itemData.rentPricePerDay,
+        locationId: itemData.locationId,
+        deliveryMode: itemData.deliveryMode || 'both',
+        minRentalDays: itemData.minRentalDays || 1,
+        maxRentalDays: itemData.maxRentalDays || 30,
+        isNegotiable: itemData.isNegotiable || false,
         tags: itemData.tags || [],
         status: 'available',
-        rating_average: 0,
-        rating_count: 0,
-        is_active: true,
-      };
+        ratingAverage: 0,
+        ratingCount: 0,
+        isActive: true,
+      });
 
       const result = await this.create(itemCreateData);
 
@@ -126,7 +126,7 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
       console.error('Error getting item details:', error);
@@ -211,7 +211,7 @@ export class ItemService extends BaseService {
 
         return {
           success: true,
-          data: paginatedData,
+          data: DataMapper.toCamelCase(paginatedData),
           pagination: {
             page,
             limit,
@@ -296,7 +296,7 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -327,8 +327,8 @@ export class ItemService extends BaseService {
         .from('item')
         .select(`
           *,
-          category:d_categories(category_name),
-          location:d_location(city, state),
+          category:categories(category_name),
+          location:location(city, state),
                       owner:users(full_name, avatar_url, trust_score),
           images:item_image(
             file:d_file(url),
@@ -348,7 +348,7 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        data: data || [],
+        data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
       console.error('Error getting similar items:', error);
@@ -412,7 +412,7 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
         message: 'Item added to favorites',
       };
     } catch (error) {
@@ -515,7 +515,7 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        data: analytics,
+        data: DataMapper.toCamelCase(analytics),
       };
     } catch (error) {
       console.error('Error getting item analytics:', error);
