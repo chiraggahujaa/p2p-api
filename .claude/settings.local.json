@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase migration:*)",
+      "Bash(supabase storage:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 5s npm run dev)",
+      "Bash(gh auth refresh:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
