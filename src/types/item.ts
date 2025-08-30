@@ -178,6 +178,20 @@ export interface CreateItemDto {
   maxRentalDays?: number;
   isNegotiable?: boolean;
   tags?: string[];
+  imageUrls?: string[];
+}
+
+// Enhanced DTO with address support
+export interface CreateItemDtoWithAddress extends Omit<CreateItemDto, 'locationId'> {
+  addressData: {               // Address data is mandatory
+    addressLine: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 }
 
 export interface UpdateItemDto {

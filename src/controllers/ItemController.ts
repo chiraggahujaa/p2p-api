@@ -2,9 +2,14 @@
 
 import { Request, Response } from 'express';
 import { ItemService } from '../services/ItemService.js';
-import { createItemSchema, updateItemSchema, itemSearchSchema, validateSearchParams } from '../validations/item.js';
+import {
+  updateItemSchema,
+  validateSearchParams,
+  createItemWithAddressSchema,
+  itemSearchByAddressSchema
+} from '../validations/item.js';
 import { validateId, validatePagination } from '../validations/common.js';
-import { CreateItemDto, UpdateItemDto } from '../types/item.js';
+import { UpdateItemDto, CreateItemDtoWithAddress } from '../types/item.js';
 
 export class ItemController {
   private itemService: ItemService;
@@ -14,7 +19,7 @@ export class ItemController {
   }
 
   /**
-   * Create a new item
+   * Create a new item with address data
    */
   async createItem(req: Request, res: Response) {
     try {
@@ -26,10 +31,9 @@ export class ItemController {
         });
       }
 
-      // Validate request data
-      const validatedData = createItemSchema.parse(req.body) as CreateItemDto;
-
-      const result = await this.itemService.createItem(userId, validatedData);
+      // Validate using address-based schema
+      const validatedData = createItemWithAddressSchema.parse(req.body) as CreateItemDtoWithAddress;
+      const result = await this.itemService.createItemWithAddress(userId, validatedData);
 
       if (!result.success) {
         return res.status(400).json(result);
@@ -148,6 +152,80 @@ export class ItemController {
       res.json(result);
     } catch (error: any) {
       console.error('Search items error:', error);
+      
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid search parameters',
+          details: error.issues,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * Search items by address string
+   * GET /api/items/search-by-address?addressQuery=mumbai&radius=10&categoryId=...
+   */
+  async searchItemsByAddress(req: Request, res: Response) {
+    try {
+      // Parse and validate query parameters
+      const parsedQuery: any = { ...req.query };
+      
+      // Parse numeric values
+      if (parsedQuery.radius) parsedQuery.radius = parseInt(parsedQuery.radius as string);
+      if (parsedQuery.page) parsedQuery.page = parseInt(parsedQuery.page as string);
+      if (parsedQuery.limit) parsedQuery.limit = parseInt(parsedQuery.limit as string);
+      
+      // Handle nested priceRange object
+      if (typeof parsedQuery.priceRange === 'string') {
+        try {
+          parsedQuery.priceRange = JSON.parse(parsedQuery.priceRange);
+        } catch {
+          // If not valid JSON, ignore
+          delete parsedQuery.priceRange;
+        }
+      }
+      if (parsedQuery.priceRange) {
+        if (parsedQuery.priceRange.min) parsedQuery.priceRange.min = parseFloat(parsedQuery.priceRange.min);
+        if (parsedQuery.priceRange.max) parsedQuery.priceRange.max = parseFloat(parsedQuery.priceRange.max);
+      }
+      
+      // Parse arrays
+      if (parsedQuery.condition && typeof parsedQuery.condition === 'string') {
+        parsedQuery.condition = (parsedQuery.condition as string).split(',');
+      }
+      if (parsedQuery.deliveryMode && typeof parsedQuery.deliveryMode === 'string') {
+        parsedQuery.deliveryMode = (parsedQuery.deliveryMode as string).split(',');
+      }
+
+      const validatedParams = itemSearchByAddressSchema.parse(parsedQuery);
+      
+      const { addressQuery, radius, ...otherFilters } = validatedParams;
+      
+      // Filter out undefined values to match the service signature
+      const cleanedFilters: any = {};
+      Object.keys(otherFilters).forEach(key => {
+        const value = (otherFilters as any)[key];
+        if (value !== undefined) {
+          cleanedFilters[key] = value;
+        }
+      });
+
+      const result = await this.itemService.searchItemsByAddress(
+        addressQuery,
+        cleanedFilters,
+        radius
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Search items by address error:', error);
       
       if (error.name === 'ZodError') {
         return res.status(400).json({

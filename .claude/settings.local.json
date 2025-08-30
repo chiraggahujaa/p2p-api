@@ -9,7 +9,9 @@
       "Bash(git log:*)",
       "Bash(git checkout:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh workflow:*)"
     ],
     "deny": [],
     "ask": []

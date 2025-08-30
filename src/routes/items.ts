@@ -9,6 +9,7 @@ const itemController = new ItemController();
 
 // Public routes (no authentication required)
 router.get('/search', itemController.searchItems.bind(itemController));
+router.get('/search-by-address', itemController.searchItemsByAddress.bind(itemController));
 router.get('/popular', itemController.getPopularItems.bind(itemController));
 router.get('/featured', itemController.getFeaturedItems.bind(itemController));
 router.get('/:id', optionalAuth, itemController.getItem.bind(itemController));

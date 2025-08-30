@@ -9,6 +9,8 @@ import itemRoutes from './routes/items.js';
 import bookingRoutes from './routes/bookings.js';
 import categoryRoutes from './routes/categories.js';
 import cityRoutes from './routes/cities.js';
+import fileRoutes from './routes/files.js';
+import addressRoutes from './routes/addresses.js';
 
 // Import middleware
 import {
@@ -20,6 +22,7 @@ import {
   corsOptions,
   generalRateLimit,
   apiRateLimit,
+  uploadRateLimit,
   authRateLimit,
   maintenanceMode,
   requestTimeout,
@@ -83,6 +86,8 @@ app.use('/api/items', apiRateLimit, itemRoutes);
 app.use('/api/bookings', apiRateLimit, bookingRoutes);
 app.use('/api/categories', apiRateLimit, categoryRoutes);
 app.use('/api/cities', apiRateLimit, cityRoutes);
+app.use('/api/files', apiRateLimit, fileRoutes);
+app.use('/api/addresses', addressRoutes);
 
 // 404 handler - must be after all routes
 app.use((req: Request, res: Response) => {

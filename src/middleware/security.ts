@@ -41,10 +41,10 @@ export const apiRateLimit = createRateLimit(
   'API rate limit exceeded, please try again later'
 );
 
-// File upload rate limit - 20 uploads per hour
+// File upload rate limit - 50 uploads per hour
 export const uploadRateLimit = createRateLimit(
   60 * 60 * 1000, // 1 hour
-  20,
+  50,
   'Too many file uploads, please try again later'
 );
 

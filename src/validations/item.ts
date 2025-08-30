@@ -53,6 +53,57 @@ export const updateItemSchema = z.object({
   status: itemStatusSchema.optional(),
 });
 
+// Enhanced item creation schema with address support
+export const createItemWithAddressSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters').max(255, 'Title too long'),
+  description: z.string().max(2000, 'Description too long').optional(),
+  categoryId: uuidSchema,
+  condition: itemConditionSchema,
+  securityAmount: z.number().min(0, 'Security amount cannot be negative').optional(),
+  rentPricePerDay: positiveNumberSchema,
+  deliveryMode: deliveryModeSchema.default('both'),
+  minRentalDays: z.number().int().min(1, 'Minimum rental days must be at least 1').default(1),
+  maxRentalDays: z.number().int().min(1, 'Maximum rental days must be at least 1').default(30),
+  isNegotiable: z.boolean().default(false),
+  tags: z.array(z.string().max(50, 'Tag too long')).max(10, 'Maximum 10 tags allowed').optional(),
+  imageUrls: z.array(z.string().url('Invalid image URL')).optional(),
+  
+  // Address data is mandatory
+  addressData: z.object({
+    addressLine: z.string().min(5, 'Address line must be at least 5 characters').max(255, 'Address line too long'),
+    city: z.string().min(2, 'City name must be at least 2 characters').max(100, 'City name too long'),
+    state: z.string().min(2, 'State name must be at least 2 characters').max(100, 'State name too long'),
+    pincode: z.string().regex(/^[0-9]{6}$/, 'Invalid pincode format (6 digits required)'),
+    country: z.string().max(100, 'Country name too long').default('India'),
+    latitude: z.number().min(-90).max(90, 'Invalid latitude').optional(),
+    longitude: z.number().min(-180).max(180, 'Invalid longitude').optional(),
+  }),
+}).refine(data => data.maxRentalDays >= data.minRentalDays, {
+  message: 'Maximum rental days must be greater than or equal to minimum rental days',
+  path: ['maxRentalDays'],
+});
+
+// Address-based item search schema
+export const itemSearchByAddressSchema = z.object({
+  addressQuery: z.string().min(2, 'Address query must be at least 2 characters').max(200, 'Address query too long'),
+  radius: z.number().int().min(1, 'Radius must be at least 1 km').max(100, 'Maximum radius is 100 km').default(10),
+  categoryId: uuidSchema.optional(),
+  priceRange: z.object({
+    min: z.number().min(0).optional(),
+    max: z.number().min(0).optional(),
+  }).optional(),
+  condition: z.array(itemConditionSchema).optional(),
+  deliveryMode: z.array(deliveryModeSchema).optional(),
+  availability: z.object({
+    startDate: z.string().date().optional(),
+    endDate: z.string().date().optional(),
+  }).optional(),
+  searchTerm: z.string().max(255, 'Search term too long').optional(),
+  sortBy: z.enum(['priceAsc', 'priceDesc', 'rating', 'distance', 'newest', 'popular']).default('distance'),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+
 // Item search validation
 export const itemSearchSchema = z.object({
   categoryId: uuidSchema.optional(),

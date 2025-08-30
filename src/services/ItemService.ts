@@ -2,9 +2,12 @@
 
 import { BaseService, QueryOptions } from './BaseService.js';
 import { supabaseAdmin } from '../utils/database.js';
-import { Item, CreateItemDto, UpdateItemDto, ItemSearchFilters } from '../types/item.js';
+import { Item, CreateItemDto, UpdateItemDto, ItemSearchFilters, CreateItemDtoWithAddress } from '../types/item.js';
 import { ApiResponse, PaginatedResponse } from '../types/common.js';
 import { DataMapper } from '../utils/mappers.js';
+import { LocationService, CreateLocationDto } from './LocationService.js';
+import { AddressService } from './AddressService.js';
+import { ValidationHelper } from '../utils/validation.js';
 
 export class ItemService extends BaseService {
   constructor() {
@@ -12,10 +15,101 @@ export class ItemService extends BaseService {
   }
 
   /**
-   * Create a new item with images
+   * Resolve location from address data using LocationService
+   */
+  private async resolveLocationFromAddress(addressData: {
+    addressLine: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<ApiResponse<any>> {
+    try {
+      const locationDto: CreateLocationDto = {
+        addressLine: addressData.addressLine,
+        city: addressData.city,
+        state: addressData.state,
+        pincode: addressData.pincode,
+        country: addressData.country || 'India',
+      };
+      
+      // Only add coordinates if they exist
+      if (addressData.latitude !== undefined) {
+        locationDto.latitude = addressData.latitude;
+      }
+      if (addressData.longitude !== undefined) {
+        locationDto.longitude = addressData.longitude;
+      }
+
+      // Create or get existing location
+      const locationResult = await LocationService.getOrCreateLocation(locationDto);
+      return locationResult;
+
+    } catch (error: any) {
+      console.error('Error resolving location from address:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to resolve address location',
+      };
+    }
+  }
+
+  /**
+   * Create a new item with address support
+   */
+  async createItemWithAddress(userId: string, itemData: CreateItemDtoWithAddress): Promise<ApiResponse<Item>> {
+    try {
+      // Resolve location from address data
+      const locationResult = await this.resolveLocationFromAddress(itemData.addressData);
+      if (!locationResult.success) {
+        return {
+          success: false,
+          error: locationResult.error || 'Failed to resolve location from address',
+        };
+      }
+      
+      const locationId = locationResult.data!.id;
+
+      // Convert to standard CreateItemDto
+      const standardItemData: CreateItemDto = {
+        title: itemData.title,
+        categoryId: itemData.categoryId,
+        condition: itemData.condition,
+        rentPricePerDay: itemData.rentPricePerDay,
+        locationId: locationId,
+        deliveryMode: itemData.deliveryMode || 'both',
+        minRentalDays: itemData.minRentalDays || 1,
+        maxRentalDays: itemData.maxRentalDays || 30,
+        isNegotiable: itemData.isNegotiable || false,
+      };
+      
+      // Add optional fields only if they exist
+      if (itemData.description) {
+        standardItemData.description = itemData.description;
+      }
+      if (itemData.securityAmount !== undefined) {
+        standardItemData.securityAmount = itemData.securityAmount;
+      }
+      if (itemData.tags) {
+        standardItemData.tags = itemData.tags;
+      }
+
+      return await this.createItem(userId, standardItemData);
+    } catch (error) {
+      console.error('Error creating item with address:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new item with images (original method for backward compatibility)
    */
   async createItem(userId: string, itemData: CreateItemDto): Promise<ApiResponse<Item>> {
     try {
+      let locationId = itemData.locationId;
+
       const itemCreateData = DataMapper.toSnakeCase({
         userId,
         title: itemData.title,
@@ -24,12 +118,13 @@ export class ItemService extends BaseService {
         condition: itemData.condition,
         securityAmount: itemData.securityAmount ?? 0,
         rentPricePerDay: itemData.rentPricePerDay,
-        locationId: itemData.locationId,
-        deliveryMode: itemData.deliveryMode || 'both',
+        locationId: locationId,
+        deliveryMode: itemData.deliveryMode || 'none',
         minRentalDays: itemData.minRentalDays || 1,
         maxRentalDays: itemData.maxRentalDays || 30,
         isNegotiable: itemData.isNegotiable || false,
         tags: itemData.tags || [],
+        imageUrls: itemData.imageUrls || [],
         status: 'available',
         ratingAverage: 0,
         ratingCount: 0,
@@ -308,6 +403,94 @@ export class ItemService extends BaseService {
       };
     } catch (error) {
       console.error('Error searching items:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search items by address string with enhanced location resolution
+   */
+  async searchItemsByAddress(
+    addressQuery: string,
+    filters: Omit<ItemSearchFilters, 'location'> = {},
+    radius: number = 10
+  ): Promise<PaginatedResponse<any>> {
+    try {
+      // First resolve the address to coordinates
+      const addressResult = await AddressService.searchAddresses({
+        query: addressQuery,
+        limit: 1,
+        countryCode: 'IN',
+      });
+
+      if (!addressResult.success || !addressResult.data || addressResult.data.length === 0) {
+        // Return a properly typed PaginatedResponse with error message
+        const errorResponse: PaginatedResponse<any> = {
+          success: false,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
+        // Add error message via type assertion since it's not in the interface
+        (errorResponse as any).error = 'Could not resolve the provided address for search';
+        return errorResponse;
+      }
+
+      const resolvedAddress = addressResult.data[0];
+      if (!resolvedAddress) {
+        const errorResponse: PaginatedResponse<any> = {
+          success: false,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
+        (errorResponse as any).error = 'Could not resolve the provided address';
+        return errorResponse;
+      }
+      
+      if (!resolvedAddress.latitude || !resolvedAddress.longitude) {
+        const errorResponse: PaginatedResponse<any> = {
+          success: false,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
+        (errorResponse as any).error = 'Address found but coordinates are not available';
+        return errorResponse;
+      }
+
+      // Use the existing searchItems method with location coordinates
+      const enhancedFilters: ItemSearchFilters = {
+        ...filters,
+        location: {
+          latitude: resolvedAddress.latitude,
+          longitude: resolvedAddress.longitude,
+          radius,
+        },
+      };
+
+      return await this.searchItems(enhancedFilters);
+
+    } catch (error) {
+      console.error('Error searching items by address:', error);
       throw error;
     }
   }
