@@ -5,7 +5,9 @@
       "Bash(supabase storage:*)",
       "Bash(npm run build:*)",
       "Bash(timeout 5s npm run dev)",
-      "Bash(gh auth refresh:*)"
+      "Bash(gh auth refresh:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
