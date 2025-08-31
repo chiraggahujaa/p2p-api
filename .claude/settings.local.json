@@ -11,7 +11,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(gh run list:*)",
-      "Bash(gh workflow:*)"
+      "Bash(gh workflow:*)",
+      "Bash(mv:*)",
+      "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)",
+      "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)"
     ],
     "deny": [],
     "ask": []

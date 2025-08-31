@@ -15,7 +15,7 @@ This directory contains GitHub Actions workflows for the P2P API project, provid
 - **Security Audit**: Dependency vulnerability scanning
 
 #### Deployment
-- **Conditional Deployment**: Automatic deployment only on `p2p/prod` branch
+- **Conditional Deployment**: Automatic deployment only on `production` branch
 - **Environment Protection**: Production environment with manual approval gates
 - **Artifact Management**: Build artifacts uploaded and reused across jobs
 
@@ -99,7 +99,7 @@ The workflow supports multiple deployment targets. Update the deployment section
 
 - **Push**: All branches trigger quality checks
 - **Pull Request**: Triggers quality checks for PRs to main/develop
-- **Deployment**: Only `p2p/prod` branch pushes trigger deployment
+- **Deployment**: Only `production` branch pushes trigger deployment
 - **Testing**: Post-deployment Cypress tests run after successful deployment
 
 ### Job Dependencies
