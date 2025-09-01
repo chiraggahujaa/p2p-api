@@ -114,10 +114,19 @@ process.on('SIGINT', () => {
 
 // Start server
 const server = app.listen(PORT, () => {
+  const env = process.env.NODE_ENV || 'development';
+  
+  let baseUrl;
+  if (env === 'production') {
+    baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN;
+  } else {
+    baseUrl = `http://localhost:${PORT}`;
+  }
+  
   console.log(`🚀 P2P Backend Server is running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Health check: http://localhost:${PORT}/health`);
-  console.log(`📖 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`📊 Environment: ${env}`);
+  console.log(`🌐 Health check: ${baseUrl}/health`);
+  console.log(`📖 API Base URL: ${baseUrl}/api`);
 });
 
 // Handle server errors

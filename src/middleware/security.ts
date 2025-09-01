@@ -179,10 +179,7 @@ export const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowedOrigins = parseAllowedOrigins();
     
-    // Log allowed origins in development for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('CORS: Allowed origins:', allowedOrigins);
-    }
+    console.log('CORS: Allowed origins:', allowedOrigins);
     
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
