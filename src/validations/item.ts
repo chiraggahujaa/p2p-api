@@ -110,7 +110,7 @@ export const itemSearchSchema = z.object({
   location: z.object({
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),
-    radius: z.number().int().min(1).max(100).default(10),
+    radius: z.number().int().min(5).max(100).default(25),
   }).optional(),
   priceRange: z.object({
     min: z.number().min(0).optional(),

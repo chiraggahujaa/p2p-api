@@ -2,9 +2,9 @@
 
 import { Request, Response } from 'express';
 import { UserService } from '../services/UserService.js';
-import { createUserSchema, updateUserSchema } from '../validations/user.js';
+import { updateUserSchema } from '../validations/user.js';
 import { validateId, validatePagination } from '../validations/common.js';
-import { CreateUserDto, UpdateUserDto } from '../types/user.js';
+import { UpdateUserDto } from '../types/user.js';
 
 export class UserController {
   private userService: UserService;
@@ -103,10 +103,6 @@ export class UserController {
         trustScore: result.data.trustScore,
         isVerified: result.data.isVerified,
         bio: result.data.bio,
-        location: result.data.location ? {
-          city: result.data.location.city,
-          state: result.data.location.state,
-        } : null,
         createdAt: result.data.createdAt,
       };
 
@@ -368,7 +364,7 @@ export class UserController {
   async getAllUsers(req: Request, res: Response) {
     try {
       const { page, limit } = validatePagination(req.query);
-      const { isVerified, location } = req.query;
+      const { isVerified } = req.query;
 
       const filters: any = {
         is_active: true,

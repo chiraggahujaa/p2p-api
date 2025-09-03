@@ -129,6 +129,17 @@ export class CityService {
     return [match, ...names.filter(n => n !== match)];
   }
 
+  public static getCityCoordinates(cityName: string): City | null {
+    const source = this.cachedCities ?? this.fallbackCities;
+    const cityNameLower = cityName.trim().toLowerCase();
+    
+    const found = source.find(city => 
+      city.name.toLowerCase() === cityNameLower
+    );
+    
+    return found || null;
+  }
+
   private static haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const toRad = (deg: number) => (deg * Math.PI) / 180;
     const R = 6371; // kilometers

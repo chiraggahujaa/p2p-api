@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { createUserProfile, getUserProfile, isEmailTaken, isPhoneTaken } from '../utils/database.js';
+import { createUserProfile, isEmailTaken, isPhoneTaken } from '../utils/database.js';
+import { UserService } from '../services/UserService.js';
 
 export class AuthController {
   static async login(req: Request, res: Response) {
@@ -149,12 +150,8 @@ export class AuthController {
         });
       }
 
-      // Get additional user profile data from database
-      const { data: profile, error } = await getUserProfile(user.id);
-
-      if (error && typeof error === 'object' && 'code' in error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Profile fetch error:', error);
-      }
+      const userService = new UserService();
+      const result = await userService.getUserWithDetails(user.id);
 
       res.json({
         success: true,
@@ -167,22 +164,7 @@ export class AuthController {
             createdAt: user.created_at,
             updatedAt: user.updated_at,
           },
-          profile: profile ? {
-            id: profile.id,
-            fullName: profile.full_name,
-            email: profile.email,
-            phoneNumber: profile.phone_number,
-            gender: profile.gender,
-            dob: profile.dob,
-            dobVisibility: profile.dob_visibility,
-            trustScore: profile.trust_score,
-            isVerified: profile.is_verified,
-            avatarUrl: profile.avatar_url,
-            bio: profile.bio,
-            isActive: profile.is_active,
-            createdAt: profile.created_at,
-            updatedAt: profile.updated_at,
-          } : null,
+          profile: result.success ? result.data : null,
         },
       });
     } catch (error) {

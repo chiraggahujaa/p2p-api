@@ -1,4 +1,4 @@
-import { BaseEntity, Location, UserGender, UserDobVisibility } from './common.js';
+import { BaseEntity, UserGender, UserDobVisibility } from './common.js';
 
 export interface User extends BaseEntity {
   id: string;
@@ -8,15 +8,11 @@ export interface User extends BaseEntity {
   gender?: UserGender;
   dob?: string;
   dobVisibility: UserDobVisibility;
-  locationId?: string;
   trustScore: number;
   isVerified: boolean;
   avatarUrl?: string;
   bio?: string;
   isActive: boolean;
-  
-  // Relations (populated when needed)
-  location?: Location;
 }
 
 // User Favorite interface
@@ -39,7 +35,6 @@ export interface CreateUserDto {
   dob?: string;
   dobVisibility?: UserDobVisibility;
   bio?: string;
-  location?: Omit<Location, 'id' | 'createdAt' | 'updatedAt'>;
 }
 
 export interface UpdateUserDto {

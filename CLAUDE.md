@@ -243,6 +243,98 @@ Required environment variables:
 - `SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
 
+## Database Schema
+
+### Core Tables
+
+**users**
+- `id` UUID (PK), `full_name` VARCHAR(255), `email` VARCHAR(255) UNIQUE
+- `phone_number` VARCHAR(20), `gender` ENUM, `dob` DATE, `dob_visibility` ENUM
+- `location_id` UUID (FK), `trust_score` DECIMAL(3,2), `is_verified` BOOLEAN
+- `avatar_url` TEXT, `bio` TEXT, `is_active` BOOLEAN
+
+**location**
+- `id` UUID (PK), `address_line` TEXT, `city` VARCHAR(100), `state` VARCHAR(100)
+- `pincode` VARCHAR(20), `country` VARCHAR(100), `latitude/longitude` DECIMAL
+
+**categories**
+- `id` UUID (PK), `category_name` VARCHAR(100) UNIQUE, `description` TEXT
+- `icon_url` TEXT, `banner_url` TEXT, `parent_category_id` UUID (FK)
+- `is_active` BOOLEAN, `sort_order` INTEGER
+
+**file**
+- `id` UUID (PK), `user_id` UUID (FK), `name` VARCHAR(255), `url` TEXT
+- `file_type` ENUM, `file_size` BIGINT, `mime_type` VARCHAR(100)
+- `bucket` VARCHAR(100), `path` TEXT, `original_name` VARCHAR(255)
+- `is_public` BOOLEAN
+
+**device**
+- `id` UUID (PK), `user_id` UUID (FK), `device_type` ENUM
+- `os_version` VARCHAR(50), `app_version` VARCHAR(50), `device_token` TEXT
+- `last_login_at` TIMESTAMP, `is_active` BOOLEAN
+
+### Business Logic Tables
+
+**item**
+- `id` UUID (PK), `user_id` UUID (FK), `title` VARCHAR(255), `description` TEXT
+- `category_id` UUID (FK), `condition` ENUM, `image_urls` TEXT[]
+- `status` ENUM, `security_amount` DECIMAL(10,2), `rent_price_per_day` DECIMAL(10,2)
+- `location_id` UUID (FK), `delivery_mode` ENUM, `min/max_rental_days` INTEGER
+- `is_negotiable` BOOLEAN, `tags` TEXT[], `rating_average` DECIMAL(3,2)
+
+**booking**
+- `id` UUID (PK), `item_id` UUID (FK), `lender_user_id/borrower_user_id` UUID (FK)
+- `start_date/end_date` DATE, `total_days` INTEGER (generated)
+- `daily_rate` DECIMAL(10,2), `total_rent` DECIMAL(10,2), `security_amount` DECIMAL(10,2)
+- `total_amount` DECIMAL(10,2) (generated), `booking_status` ENUM
+- `pickup/delivery_location` UUID (FK), `rating_by_lender/borrower` INTEGER
+
+**payment**
+- `id` UUID (PK), `booking_id` UUID (FK), `user_id` UUID (FK)
+- `amount` DECIMAL(10,2), `payment_method` ENUM, `transaction_id` VARCHAR(255)
+- `payment_status` ENUM, `gateway_response` JSONB, `refund_amount` DECIMAL(10,2)
+
+**support_req**
+- `id` UUID (PK), `user_id` UUID (FK), `issue_type` ENUM
+- `subject` VARCHAR(255), `description` TEXT, `booking_id` UUID (FK)
+- `priority` INTEGER, `status` ENUM, `resolution` TEXT
+
+### Relationship Tables
+
+**item_image**
+- `id` UUID (PK), `item_id` UUID (FK), `file_id` UUID (FK)
+- `is_primary` BOOLEAN, `display_order` INTEGER
+
+**user_favorite**
+- `id` UUID (PK), `user_id` UUID (FK), `item_id` UUID (FK)
+
+**item_review**
+- `id` UUID (PK), `item_id` UUID (FK), `user_id` UUID (FK)
+- `booking_id` UUID (FK), `rating` INTEGER, `review_text` TEXT
+- `is_verified` BOOLEAN, `helpful_count` INTEGER
+
+### Analytics Tables
+
+**analytics_event**
+- `id` UUID (PK), `event_type` VARCHAR(50), `item_id` UUID (FK)
+- `user_id` UUID (FK), `session_id` UUID, `device_id` UUID (FK)
+- `event_timestamp` TIMESTAMP, `additional_data` JSONB
+
+**item_metric**
+- `id` UUID (PK), `item_id` UUID (FK), `metric_date` DATE
+- `view_count` INTEGER, `unique_view_count` INTEGER, `booking_count` INTEGER
+- `booking_conversion_rate` DECIMAL(5,4), `bounce_rate` DECIMAL(5,4)
+
+**item_view**
+- `id` UUID (PK), `user_id` UUID (FK), `item_id` UUID (FK)
+- `device_id` UUID (FK), `ip_address` INET, `session_duration` INTEGER
+
+### Key Features
+- **Enums**: item_condition, item_status, booking_status, payment_status, delivery_mode, etc.
+- **Generated Columns**: total_days, total_amount auto-calculated
+- **Triggers**: Auto-updated timestamps, analytics event dates
+- **Indexes**: Optimized for queries, time-series data, and relationships
+
 ## Performance Considerations
 
 - **Pagination**: Always use pagination for list endpoints

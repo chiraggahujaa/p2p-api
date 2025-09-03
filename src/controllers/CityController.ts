@@ -37,6 +37,46 @@ export class CityController {
       return res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
+
+  /**
+   * Get coordinates for a city name
+   */
+  static async getCityCoordinates(req: Request, res: Response) {
+    try {
+      const cityName = req.params.name;
+      
+      if (!cityName || cityName.trim().length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'City name is required' 
+        });
+      }
+
+      await (CityService as any).loadCities?.();
+      await (CityService as any).augmentWithPreferredIfMissing?.(cityName.trim());
+      
+      const cityCoords = CityService.getCityCoordinates(cityName.trim());
+      
+      if (!cityCoords) {
+        return res.status(404).json({ 
+          success: false, 
+          error: 'City not found' 
+        });
+      }
+
+      res.set('Cache-Control', 'public, max-age=3600');
+      return res.status(200).json({ 
+        success: true,
+        data: cityCoords
+      });
+    } catch (error) {
+      console.error('City coordinates endpoint error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error' 
+      });
+    }
+  }
 }
 
 

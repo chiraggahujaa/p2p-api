@@ -196,6 +196,55 @@ export class LocationService {
   }
 
   /**
+   * Update a location
+   */
+  public static async updateLocation(
+    locationId: string, 
+    locationData: Partial<CreateLocationDto>
+  ): Promise<{ success: boolean; data?: Location; error?: string }> {
+    try {
+      const updateData = DataMapper.toSnakeCase({
+        ...locationData,
+        updatedAt: new Date().toISOString()
+      });
+
+      const { data, error } = await supabaseAdmin
+        .from('location')
+        .update(updateData)
+        .eq('id', locationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Location update error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          error: 'Location not found'
+        };
+      }
+
+      return {
+        success: true,
+        data: DataMapper.toCamelCase(data)
+      };
+
+    } catch (error: any) {
+      console.error('Update location error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to update location'
+      };
+    }
+  }
+
+  /**
    * Create a default location for quick testing
    */
   public static async createDefaultLocation(): Promise<{ success: boolean; data?: Location; error?: string }> {

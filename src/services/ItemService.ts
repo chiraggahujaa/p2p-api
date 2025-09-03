@@ -259,24 +259,15 @@ export class ItemService extends BaseService {
           price_min: priceRange?.min || null,
           price_max: priceRange?.max || null,
           search_term: searchTerm || null,
+          condition_filter: condition && condition.length > 0 ? condition : null,
+          delivery_mode_filter: deliveryMode && deliveryMode.length > 0 ? deliveryMode : null,
         });
 
         if (error) {
           throw new Error(`Database error: ${error.message}`);
         }
 
-        // Apply additional filters if needed
         let filteredData = data || [];
-
-        if (condition && condition.length > 0) {
-          filteredData = filteredData.filter((item: any) => condition.includes(item.condition));
-        }
-
-        if (deliveryMode && deliveryMode.length > 0) {
-          filteredData = filteredData.filter((item: any) => 
-            deliveryMode.includes(item.delivery_mode) || item.delivery_mode === 'both'
-          );
-        }
 
         // Apply sorting
         switch (sortBy) {

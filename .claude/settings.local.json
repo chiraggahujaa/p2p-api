@@ -14,7 +14,8 @@
       "Bash(gh workflow:*)",
       "Bash(mv:*)",
       "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)",
-      "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)"
+      "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []

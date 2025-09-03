@@ -10,27 +10,10 @@ export class UserService extends BaseService {
   }
 
   /**
-   * Create a new user with location
+   * Create a new user
    */
   async createUser(userData: CreateUserDto): Promise<ApiResponse<User>> {
     try {
-      let locationId: string | undefined;
-
-      // Create location if provided
-      if (userData.location) {
-        const { data: locationData, error: locationError } = await supabaseAdmin
-          .from('location')
-          .insert(userData.location)
-          .select()
-          .single();
-
-        if (locationError) {
-          throw new Error(`Location creation error: ${locationError.message}`);
-        }
-
-        locationId = locationData.id;
-      }
-
       const userCreateData = DataMapper.toSnakeCase({
         fullName: userData.fullName,
         email: userData.email,
@@ -39,7 +22,6 @@ export class UserService extends BaseService {
         dob: userData.dob,
         dobVisibility: userData.dobVisibility || 'private',
         bio: userData.bio,
-        locationId: locationId,
         trustScore: 0,
         isVerified: false,
         isActive: true,
@@ -78,16 +60,13 @@ export class UserService extends BaseService {
   }
 
   /**
-   * Get user with location details
+   * Get user details
    */
   async getUserWithDetails(userId: string): Promise<ApiResponse<User>> {
     try {
       const { data, error } = await supabaseAdmin
         .from('users')
-        .select(`
-          *,
-          location:location(*)
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
@@ -103,7 +82,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
       console.error('Error getting user details:', error);
@@ -134,7 +113,7 @@ export class UserService extends BaseService {
 
       return {
         success: true,
-        data,
+        data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
       console.error('Error getting user by email:', error);
@@ -180,8 +159,7 @@ export class UserService extends BaseService {
         .select(`
           *,
           category:categories(category_name),
-          location:location(city, state),
-                      images:item_image(
+          images:item_image(
             file:d_file(url, file_type),
             is_primary,
             display_order
@@ -288,7 +266,6 @@ export class UserService extends BaseService {
           item:item(
             *,
             category:categories(category_name),
-            location:location(city, state),
             owner:users(full_name, avatar_url, trust_score)
           )
         `, { count: 'exact' })
@@ -418,8 +395,7 @@ export class UserService extends BaseService {
           dob_visibility,
           is_active,
           created_at,
-          updated_at,
-          location:location(city, state)
+          updated_at
         `, { count: 'exact' })
         .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
         .eq('is_active', true)
