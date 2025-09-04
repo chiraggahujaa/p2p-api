@@ -111,9 +111,11 @@ export class BaseService {
    */
   async create(data: Record<string, any>): Promise<ApiResponse<any>> {
     try {
+      const snakeCaseData = DataMapper.toSnakeCase(data);
+      
       const { data: result, error } = await supabaseAdmin
         .from(this.tableName)
-        .insert(data)
+        .insert(snakeCaseData)
         .select()
         .single();
 
@@ -137,9 +139,11 @@ export class BaseService {
    */
   async update(id: string, data: Record<string, any>): Promise<ApiResponse<any>> {
     try {
+      const snakeCaseData = DataMapper.toSnakeCase(data);
+      
       const { data: result, error } = await supabaseAdmin
         .from(this.tableName)
-        .update(data)
+        .update(snakeCaseData)
         .eq(this.getIdColumn(), id)
         .select()
         .single();

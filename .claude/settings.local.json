@@ -15,7 +15,8 @@
       "Bash(mv:*)",
       "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)",
       "Read(/Users/chiragahuja/Desktop/p2p/p2p-web/**)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(npx supabase db rest:*)"
     ],
     "deny": [],
     "ask": []
