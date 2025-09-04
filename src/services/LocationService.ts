@@ -245,6 +245,47 @@ export class LocationService {
   }
 
   /**
+   * Resolve location from address data
+   */
+  public static async resolveFromAddress(addressData: {
+    addressLine: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<{ success: boolean; data?: Location; error?: string }> {
+    try {
+      const locationDto: CreateLocationDto = {
+        addressLine: addressData.addressLine,
+        city: addressData.city,
+        state: addressData.state,
+        pincode: addressData.pincode,
+        country: addressData.country || 'India',
+      };
+      
+      // Only add coordinates if they exist
+      if (addressData.latitude !== undefined) {
+        locationDto.latitude = addressData.latitude;
+      }
+      if (addressData.longitude !== undefined) {
+        locationDto.longitude = addressData.longitude;
+      }
+
+      // Create or get existing location
+      return await this.getOrCreateLocation(locationDto);
+
+    } catch (error: any) {
+      console.error('Error resolving location from address:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to resolve address location',
+      };
+    }
+  }
+
+  /**
    * Create a default location for quick testing
    */
   public static async createDefaultLocation(): Promise<{ success: boolean; data?: Location; error?: string }> {

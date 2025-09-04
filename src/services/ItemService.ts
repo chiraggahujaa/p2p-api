@@ -8,107 +8,42 @@ import { DataMapper } from '../utils/mappers.js';
 import { LocationService, CreateLocationDto } from './LocationService.js';
 import { AddressService } from './AddressService.js';
 import { ValidationHelper } from '../utils/validation.js';
+import { ItemImageService } from './ItemImageService.js';
 
 export class ItemService extends BaseService {
+  private itemImageService: ItemImageService;
+
   constructor() {
     super('item');
+    this.itemImageService = new ItemImageService();
   }
 
-  /**
-   * Resolve location from address data using LocationService
-   */
-  private async resolveLocationFromAddress(addressData: {
-    addressLine: string;
-    city: string;
-    state: string;
-    pincode: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-  }): Promise<ApiResponse<any>> {
-    try {
-      const locationDto: CreateLocationDto = {
-        addressLine: addressData.addressLine,
-        city: addressData.city,
-        state: addressData.state,
-        pincode: addressData.pincode,
-        country: addressData.country || 'India',
-      };
-      
-      // Only add coordinates if they exist
-      if (addressData.latitude !== undefined) {
-        locationDto.latitude = addressData.latitude;
-      }
-      if (addressData.longitude !== undefined) {
-        locationDto.longitude = addressData.longitude;
-      }
 
-      // Create or get existing location
-      const locationResult = await LocationService.getOrCreateLocation(locationDto);
-      return locationResult;
-
-    } catch (error: any) {
-      console.error('Error resolving location from address:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to resolve address location',
-      };
-    }
-  }
 
   /**
-   * Create a new item with address support
+   * Create a new item
    */
-  async createItemWithAddress(userId: string, itemData: CreateItemDtoWithAddress): Promise<ApiResponse<Item>> {
+  async createItem(userId: string, itemData: CreateItemDto): Promise<ApiResponse<Item>>;
+  async createItem(userId: string, itemData: CreateItemDtoWithAddress): Promise<ApiResponse<Item>>;
+  async createItem(userId: string, itemData: CreateItemDto | CreateItemDtoWithAddress): Promise<ApiResponse<Item>> {
     try {
-      // Resolve location from address data
-      const locationResult = await this.resolveLocationFromAddress(itemData.addressData);
-      if (!locationResult.success) {
-        return {
-          success: false,
-          error: locationResult.error || 'Failed to resolve location from address',
-        };
-      }
-      
-      const locationId = locationResult.data!.id;
+      let locationId: string;
 
-      // Convert to standard CreateItemDto
-      const standardItemData: CreateItemDto = {
-        title: itemData.title,
-        categoryId: itemData.categoryId,
-        condition: itemData.condition,
-        rentPricePerDay: itemData.rentPricePerDay,
-        locationId: locationId,
-        deliveryMode: itemData.deliveryMode || 'both',
-        minRentalDays: itemData.minRentalDays || 1,
-        maxRentalDays: itemData.maxRentalDays || 30,
-        isNegotiable: itemData.isNegotiable || false,
-      };
-      
-      // Add optional fields only if they exist
-      if (itemData.description) {
-        standardItemData.description = itemData.description;
+      // Check if this is CreateItemDtoWithAddress (has addressData)
+      if ('addressData' in itemData) {
+        // Resolve location from address data
+        const locationResult = await LocationService.resolveFromAddress(itemData.addressData);
+        if (!locationResult.success) {
+          return {
+            success: false,
+            error: locationResult.error || 'Failed to resolve location from address',
+          };
+        }
+        locationId = locationResult.data!.id;
+      } else {
+        // Use provided locationId
+        locationId = itemData.locationId;
       }
-      if (itemData.securityAmount !== undefined) {
-        standardItemData.securityAmount = itemData.securityAmount;
-      }
-      if (itemData.tags) {
-        standardItemData.tags = itemData.tags;
-      }
-
-      return await this.createItem(userId, standardItemData);
-    } catch (error) {
-      console.error('Error creating item with address:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a new item with images (original method for backward compatibility)
-   */
-  async createItem(userId: string, itemData: CreateItemDto): Promise<ApiResponse<Item>> {
-    try {
-      let locationId = itemData.locationId;
 
       const itemCreateData = DataMapper.toSnakeCase({
         userId,
@@ -124,7 +59,6 @@ export class ItemService extends BaseService {
         maxRentalDays: itemData.maxRentalDays || 30,
         isNegotiable: itemData.isNegotiable || false,
         tags: itemData.tags || [],
-        imageUrls: itemData.imageUrls || [],
         status: 'available',
         ratingAverage: 0,
         ratingCount: 0,
@@ -135,6 +69,16 @@ export class ItemService extends BaseService {
 
       if (!result.success) {
         return result;
+      }
+
+      if (itemData.imageUrls && itemData.imageUrls.length > 0) {
+        const imageResult = await this.itemImageService.createItemImages(result.data.id, itemData.imageUrls);
+        if (!imageResult.success) {
+          return {
+            success: false,
+            error: 'Item created but failed to save images',
+          };
+        }
       }
 
       return result;

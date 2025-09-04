@@ -33,7 +33,7 @@ export class ItemController {
 
       // Validate using address-based schema
       const validatedData = createItemWithAddressSchema.parse(req.body) as CreateItemDtoWithAddress;
-      const result = await this.itemService.createItemWithAddress(userId, validatedData);
+      const result = await this.itemService.createItem(userId, validatedData);
 
       if (!result.success) {
         return res.status(400).json(result);
