@@ -12,6 +12,13 @@ on:
         default: false
         type: boolean
 
+# Add these permissions at the workflow level
+permissions:
+  contents: write        # To push to branches
+  pull-requests: write   # To create/update PRs if needed
+  actions: read         # To read workflow status
+  checks: read          # To read status checks
+
 env:
   NODE_VERSION: '20'
 
@@ -75,25 +82,30 @@ jobs:
           git checkout production
           git pull origin production
           
-          # Check if there are any conflicts
-          if ! git merge origin/main --no-ff --no-commit; then
-            echo "❌ Merge conflicts detected. Please resolve manually."
-            git merge --abort
-            exit 1
+          # Try fast-forward merge first (preferred method)
+          if git merge origin/main --ff-only; then
+            echo "✅ Fast-forward merge successful"
+          else
+            echo "⚠️ Fast-forward merge not possible, using rebase strategy..."
+            
+            # Reset to main (this creates linear history)
+            git reset --hard origin/main
+            
+            # Create a deployment commit
+            git commit --allow-empty -m "🤖 Automated deployment: Update production to main"
+            
+            - Source: main (${{ steps.check.outputs.main-commit }})
+            - Target: production (${{ steps.check.outputs.production-commit }})
+            - Triggered by: ${{ github.event_name }}
+            - Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            
+            This deployment was automatically triggered by the scheduled workflow."
+            
+            echo "✅ Production branch updated to match main with deployment commit"
           fi
           
-          # Create merge commit
-          git commit -m "🤖 Automated deployment: Merge main into production
-
-          - Source: main (${{ steps.check.outputs.main-commit }})
-          - Target: production (${{ steps.check.outputs.production-commit }})
-          - Triggered by: ${{ github.event_name }}
-          - Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          
-          This deployment was automatically triggered by the scheduled workflow."
-          
           # Push to production branch
-          git push origin production
+          git push origin production --force
           
           echo "✅ Successfully merged main into production"
           echo "deployment-commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
