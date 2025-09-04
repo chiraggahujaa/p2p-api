@@ -72,6 +72,46 @@ jobs:
             fi
           fi
 
+      - name: Wait for status checks on main
+        if: steps.check.outputs.should-deploy == 'true'
+        run: |
+          echo "⏳ Waiting for status checks to pass on main branch..."
+          
+          # Wait for up to 10 minutes for status checks to complete
+          timeout=600
+          interval=30
+          elapsed=0
+          
+          while [ $elapsed -lt $timeout ]; do
+            # Get status checks for main branch
+            status_response=$(curl -s \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/commits/${{ steps.check.outputs.main-commit }}/status")
+            
+            combined_status=$(echo "$status_response" | jq -r '.state // "pending"')
+            
+            echo "Current status: $combined_status"
+            
+            if [ "$combined_status" = "success" ]; then
+              echo "✅ All status checks passed on main branch"
+              break
+            elif [ "$combined_status" = "failure" ] || [ "$combined_status" = "error" ]; then
+              echo "❌ Status checks failed on main branch"
+              echo "Status details:"
+              echo "$status_response" | jq '.statuses[] | {context: .context, state: .state, description: .description}'
+              exit 1
+            fi
+            
+            echo "Status checks still pending, waiting ${interval}s..."
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "⚠️ Timeout waiting for status checks, proceeding anyway"
+          fi
+
       - name: Merge main into production
         id: merge
         if: steps.check.outputs.should-deploy == 'true'
@@ -174,18 +214,48 @@ jobs:
           echo "🔍 Please check the workflow logs for details."
           echo "💡 You may need to resolve merge conflicts manually."
 
-# ==========================================
-# WORKFLOW SUMMARY
-# ==========================================
-
-# This workflow automatically deploys main branch to production every day at 9 PM UTC:
-# 1. ✅ Checks if main is ahead of production (prevents rollbacks)
-# 2. ✅ Safely merges main into production with conflict detection
-# 3. ✅ Verifies the deployment was successful
-# 4. ✅ Provides detailed notifications for success/failure/skip scenarios
-# 5. ✅ Supports manual triggering with force deployment option
-
-# Schedule: Daily at 9:00 PM UTC (adjust cron expression for your timezone)
-# Manual trigger: Available via GitHub Actions UI with force deployment option
-# Safety features: Prevents rollbacks, detects conflicts
-# Note: Quality checks are handled by your existing production push workflow
+  # ==========================================
+  # WORKFLOW SUMMARY
+  # ==========================================
+  
+  workflow-summary:
+    name: 'Workflow Summary'
+    runs-on: ubuntu-latest
+    needs: [deploy-to-production, notify-success, notify-skipped, notify-failure]
+    if: always()
+    
+    steps:
+      - name: Generate workflow summary
+        run: |
+          echo "# 📋 Daily Production Deploy - Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🕘 Execution Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**🎯 Target:** Deploy main branch → production branch → Railway" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Deployment status
+          if [ "${{ needs.deploy-to-production.result }}" == "success" ]; then
+            echo "## ✅ Deployment Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
+            echo "- Main branch successfully deployed to production" >> $GITHUB_STEP_SUMMARY
+            echo "- Railway deployment should be triggered automatically" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-to-production.result }}" == "skipped" ]; then
+            echo "## ⏭️ Deployment Status: SKIPPED" >> $GITHUB_STEP_SUMMARY
+            echo "- No new changes detected between main and production" >> $GITHUB_STEP_SUMMARY
+            echo "- No deployment was necessary" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-to-production.result }}" == "failure" ]; then
+            echo "## ❌ Deployment Status: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "- Deployment encountered an error" >> $GITHUB_STEP_SUMMARY
+            echo "- Please check the logs for details" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⚠️ Deployment Status: UNKNOWN" >> $GITHUB_STEP_SUMMARY
+            echo "- Unexpected deployment result" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Railway Dashboard](https://railway.app/dashboard)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Production Branch](https://github.com/${{ github.repository }}/tree/production)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Main Branch](https://github.com/${{ github.repository }}/tree/main)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*🤖 Automated daily deployment at 9:00 PM UTC*" >> $GITHUB_STEP_SUMMARY
