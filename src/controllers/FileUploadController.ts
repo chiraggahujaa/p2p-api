@@ -34,7 +34,7 @@ export class FileUploadController {
       }
 
       const options = {
-        bucket: req.body.bucket,
+        filePath: req.body.filePath,
         isPublic: req.body.isPublic !== 'false', // Default to true
         ...(req.body.maxSizeBytes && { maxSizeBytes: parseInt(req.body.maxSizeBytes) }),
         ...(req.body.allowedMimeTypes && { allowedMimeTypes: req.body.allowedMimeTypes.split(',') })
@@ -86,7 +86,7 @@ export class FileUploadController {
       }
 
       const options = {
-        bucket: req.body.bucket,
+        filePath: req.body.filePath,
         isPublic: req.body.isPublic !== 'false', // Default to true
         ...(req.body.maxSizeBytes && { maxSizeBytes: parseInt(req.body.maxSizeBytes) }),
         ...(req.body.allowedMimeTypes && { allowedMimeTypes: req.body.allowedMimeTypes.split(',') })
@@ -252,17 +252,15 @@ export class FileUploadController {
   }
 
   /**
-   * Upload product images (specialized endpoint for product images)
+   * Upload images (specialized endpoint for images)
    */
-  public async uploadProductImages(req: AuthenticatedRequest, res: Response): Promise<void> {
+  public async uploadImages(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      console.log('uploadProductImages called with user:', req.user);
-      
       if (!req.user?.id) {
         res.status(401).json({
           success: false,
           error: 'Authentication required',
-          message: 'You must be logged in to upload product images'
+          message: 'You must be logged in to upload images'
         });
         return;
       }
@@ -292,9 +290,9 @@ export class FileUploadController {
       }
 
       const options = {
-        bucket: 'images',
-        isPublic: true,
-        maxSizeBytes: 5 * 1024 * 1024, // 5MB limit for product images
+        filePath: req.body.filePath, // Will default to 'media' for images in the service
+        isPublic: req.body.isPublic !== 'false', // Default to true
+        maxSizeBytes: 5 * 1024 * 1024, // 5MB limit for images
         allowedMimeTypes: allowedImageTypes
       };
 
@@ -306,16 +304,16 @@ export class FileUploadController {
 
       res.status(201).json({
         success: true,
-        message: `${uploadedFiles.length} product images uploaded successfully`,
+        message: `${uploadedFiles.length} images uploaded successfully`,
         data: uploadedFiles
       });
 
     } catch (error: any) {
-      console.error('Upload product images error:', error);
+      console.error('Upload images error:', error);
       res.status(400).json({
         success: false,
-        error: error.message || 'Product image upload failed',
-        message: 'Failed to upload product images'
+        error: error.message || 'Image upload failed',
+        message: 'Failed to upload images'
       });
     }
   }

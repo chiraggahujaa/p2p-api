@@ -42,7 +42,7 @@ const upload = multer({
 });
 
 // Product images upload (specialized for product images with stricter validation)
-const productImageUpload = multer({
+const imageUpload = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit for product images
@@ -82,12 +82,12 @@ router.post(
   fileUploadController.uploadMultipleFiles.bind(fileUploadController)
 );
 
-// Upload product images (specialized endpoint)
+// Upload call images (specialized endpoint)
 router.post(
-  '/upload/product-images',
+  '/upload/images',
   authenticateToken,
-  productImageUpload.array('images', 5),
-  fileUploadController.uploadProductImages.bind(fileUploadController)
+  imageUpload.array('images', 5),
+  fileUploadController.uploadImages.bind(fileUploadController)
 );
 
 // Get user's files

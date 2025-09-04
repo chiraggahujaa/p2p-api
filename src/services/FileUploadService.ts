@@ -20,7 +20,7 @@ export interface UploadedFile {
 }
 
 export interface FileUploadOptions {
-  bucket?: string;
+  filePath?: string;
   isPublic?: boolean;
   maxSizeBytes?: number;
   allowedMimeTypes?: string[];
@@ -76,20 +76,24 @@ export class FileUploadService {
       console.log('FileUploadService.uploadFile called with:', { userId, fileName: file.originalname, fileSize: file.size });
       // Determine file type and validate
       const fileType = this.determineFileType(file.mimetype);
-      const bucket = options.bucket || this.getBucketForFileType(fileType);
+      const bucket = this.getBucketForFileType(fileType);
       
       // Validate file
       this.validateFile(file, fileType, options);
       
-      // Generate unique file path
+      // File path structure: {userId}/{filePath}/{year}/{month}/{fileName}
       const fileExtension = this.getFileExtension(file.originalname);
       const fileName = `${uuidv4()}${fileExtension}`;
-      const filePath = `${userId}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${fileName}`;
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const filePath = options.filePath || this.getDefaultFilePathForFileType(fileType);
+      const fullPath = `${userId}/${filePath}/${year}/${month}/${fileName}`;
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
         .from(bucket)
-        .upload(filePath, file.buffer, {
+        .upload(fullPath, file.buffer, {
           contentType: file.mimetype,
           upsert: false,
           cacheControl: '3600'
@@ -102,7 +106,7 @@ export class FileUploadService {
       // Get public URL
       const { data: urlData } = supabaseAdmin.storage
         .from(bucket)
-        .getPublicUrl(filePath);
+        .getPublicUrl(fullPath);
 
       if (!urlData?.publicUrl) {
         throw new Error('Failed to get public URL for uploaded file');
@@ -120,7 +124,7 @@ export class FileUploadService {
         mime_type: file.mimetype,
         is_public: options.isPublic ?? true,
         bucket,
-        path: filePath,
+        path: fullPath,
         uploaded_on: new Date().toISOString()
       };
 
@@ -136,7 +140,7 @@ export class FileUploadService {
 
       if (dbError) {
         // Cleanup uploaded file if database insert fails
-        await this.deleteFromStorage(bucket, filePath);
+        await this.deleteFromStorage(bucket, fullPath);
         throw new Error(`Database insert failed: ${dbError.message}`);
       }
 
@@ -288,13 +292,26 @@ export class FileUploadService {
   private static getBucketForFileType(fileType: FileType): string {
     switch (fileType) {
       case 'image':
-        return this.IMAGE_BUCKET;
+        return FileUploadService.IMAGE_BUCKET;
       case 'document':
-        return this.DOCUMENT_BUCKET;
+        return FileUploadService.DOCUMENT_BUCKET;
       case 'video':
-        return this.VIDEO_BUCKET;
+        return FileUploadService.VIDEO_BUCKET;
       default:
-        return this.DEFAULT_BUCKET;
+        return FileUploadService.DEFAULT_BUCKET;
+    }
+  }
+
+  private static getDefaultFilePathForFileType(fileType: FileType): string {
+    switch (fileType) {
+      case 'image':
+        return 'media';
+      case 'document':
+        return 'documents';
+      case 'video':
+        return 'media';
+      default:
+        return 'uploads';
     }
   }
 
