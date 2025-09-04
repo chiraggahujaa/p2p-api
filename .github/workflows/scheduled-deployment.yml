@@ -92,14 +92,7 @@ jobs:
             git reset --hard origin/main
             
             # Create a deployment commit
-            git commit --allow-empty -m "🤖 Automated deployment: Update production to main"
-            
-            - Source: main (${{ steps.check.outputs.main-commit }})
-            - Target: production (${{ steps.check.outputs.production-commit }})
-            - Triggered by: ${{ github.event_name }}
-            - Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-            
-            This deployment was automatically triggered by the scheduled workflow."
+            git commit --allow-empty -m "🤖 Automated deployment: Update production to main - Source: main (${{ steps.check.outputs.main-commit }}) - Target: production (${{ steps.check.outputs.production-commit }}) - Triggered by: ${{ github.event_name }} - Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC') - This deployment was automatically triggered by the scheduled workflow."
             
             echo "✅ Production branch updated to match main with deployment commit"
           fi
