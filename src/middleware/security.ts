@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import { Request, Response, NextFunction } from 'express';
+import { getFrontendUrl } from '../utils/environment.js';
 
 // Rate limiting configurations
 export const createRateLimit = (windowMs: number, max: number, message?: string) => {
@@ -153,7 +154,7 @@ const parseAllowedOrigins = (): string[] => {
   // Parse comma-separated URLs from environment variables
   const envUrls = [
     process.env.ALLOWED_ORIGINS,
-    process.env.FRONTEND_URL,
+    getFrontendUrl(),
     process.env.ADMIN_URL,
   ];
   

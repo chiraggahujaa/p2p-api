@@ -1,0 +1,92 @@
+# 🥊 Lefthook configuration for Express.js Backend
+# https://lefthook.dev/configuration/
+
+# Pre-commit hooks - run on every commit
+pre-commit:
+  parallel: true
+  jobs:
+    # TypeScript type checking
+    - name: "🔍 Type check"
+      run: npm run typecheck
+      files: git diff --staged --name-only --diff-filter=ACMR
+      glob: "*.{ts,tsx}"
+      
+    # Linting
+    - name: "🧹 Lint"
+      run: npm run lint
+      files: git diff --staged --name-only --diff-filter=ACMR
+      glob: "*.{js,ts,json}"
+      
+    # Build check
+    - name: "🔨 Build check"
+      run: npm run build
+      files: git diff --staged --name-only --diff-filter=ACMR
+      glob: "*.{ts,tsx,js,json}"
+      
+    # Security audit
+    - name: "🔒 Security audit"
+      run: npm audit --audit-level=high
+      
+    # Check for secrets/sensitive data
+    - name: "🔐 Secret scan"
+      run: |
+        # Look for actual API keys and secrets (exclude lefthook.yml and lock files)
+        FILES=$(git diff --staged --name-only | grep -v -E "(package-lock\.json|lefthook\.yml|\.lock|node_modules)")
+        if [ -n "$FILES" ] && echo "$FILES" | xargs grep -l "sk-[a-zA-Z0-9]\{20,\}\|pk_[a-zA-Z0-9]\{20,\}\|-----BEGIN.*PRIVATE" 2>/dev/null; then
+          echo "⚠️  Potential API keys or private keys detected!"
+          echo "$FILES" | xargs grep -n "sk-[a-zA-Z0-9]\{20,\}\|pk_[a-zA-Z0-9]\{20,\}\|-----BEGIN.*PRIVATE" 2>/dev/null || true
+          echo "Please review the above for sensitive information"
+          exit 1
+        fi
+
+# Pre-push hooks - run before pushing to remote
+pre-push:
+  parallel: false
+  jobs:
+    # Run tests before push
+    - name: "🧪 Run tests"
+      run: npm run test:smoke
+      
+    # Final build verification
+    - name: "⚡ Final build"
+      run: npm run build
+      
+    # Dependencies check
+    - name: "📦 Dependencies check"
+      run: npm audit --audit-level=moderate
+
+# Commit message validation
+commit-msg:
+  jobs:
+    - name: "💬 Commit message format"
+      run: |
+        commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
+        commit_msg=$(cat .git/COMMIT_EDITMSG)
+        if ! echo "$commit_msg" | grep -qE "$commit_regex"; then
+          echo "❌ Invalid commit message format!"
+          echo "Format: <type>[optional scope]: <description>"
+          echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+          echo "Example: feat(auth): add user login validation"
+          exit 1
+        fi
+
+# Post-commit hooks - run after successful commit
+post-commit:
+  jobs:
+    - name: "✅ Commit success"
+      run: echo "✅ Commit successful! All checks passed."
+
+# Configuration
+colors: true
+no_tty: false
+min_version: 1.5.0
+
+# Skip hooks for specific scenarios
+skip_output:
+  - meta
+  - summary
+  
+# Remote configuration (optional)
+remote:
+  git_url: https://github.com/evilmartians/lefthook
+  ref: v1.12.3

@@ -179,4 +179,4 @@ npm run supabase:status
 
 ---
 
-For frontend setup, check the `../frontend/README.md`
+For frontend setup, check the `../p2p-web/README.md`

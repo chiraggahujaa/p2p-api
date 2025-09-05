@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { createUserProfile, isEmailTaken, isPhoneTaken } from '../utils/database.js';
 import { UserService } from '../services/UserService.js';
+import { getFrontendUrl } from '../utils/environment.js';
 
 export class AuthController {
   static async login(req: Request, res: Response) {
@@ -55,7 +56,7 @@ export class AuthController {
           data: {
             name,
           },
-          emailRedirectTo: `${process.env.FRONTEND_URL}/verify-email`,
+          emailRedirectTo: `${getFrontendUrl()}/verify-email`,
         },
       });
 
@@ -270,7 +271,7 @@ export class AuthController {
       }
 
       const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.FRONTEND_URL}/reset-password`,
+        redirectTo: `${getFrontendUrl()}/reset-password`,
       });
 
       if (error) {
@@ -730,7 +731,7 @@ export class AuthController {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${process.env.FRONTEND_URL}/verify-email`,
+          emailRedirectTo: `${getFrontendUrl()}/verify-email`,
         },
       });
 

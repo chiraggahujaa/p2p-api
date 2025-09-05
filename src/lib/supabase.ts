@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
+import { getFrontendUrl } from '../utils/environment.js';
 
 dotenv.config();
 
@@ -191,7 +192,7 @@ export const getGoogleOAuthUrl = (redirectTo?: string) => {
   return client.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: redirectTo || `${process.env.FRONTEND_URL}/auth/callback`,
+      redirectTo: redirectTo || `${getFrontendUrl()}/auth/callback`,
     },
   });
 };
