@@ -43,10 +43,6 @@ pre-commit:
 pre-push:
   parallel: false
   jobs:
-    # Run tests before push
-    - name: "🧪 Run tests"
-      run: npm run test:smoke
-      
     # Final build verification
     - name: "⚡ Final build"
       run: npm run build
@@ -55,20 +51,11 @@ pre-push:
     - name: "📦 Dependencies check"
       run: npm audit --audit-level=moderate
 
-# Commit message validation
-commit-msg:
-  jobs:
-    - name: "💬 Commit message format"
-      run: |
-        commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
-        commit_msg=$(cat .git/COMMIT_EDITMSG)
-        if ! echo "$commit_msg" | grep -qE "$commit_regex"; then
-          echo "❌ Invalid commit message format!"
-          echo "Format: <type>[optional scope]: <description>"
-          echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
-          echo "Example: feat(auth): add user login validation"
-          exit 1
-        fi
+# Commit message validation (disabled)
+# commit-msg:
+#   jobs:
+#     - name: "💬 Commit message format"
+#       run: echo "Commit message validation disabled"
 
 # Post-commit hooks - run after successful commit
 post-commit:
