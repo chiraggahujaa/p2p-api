@@ -160,7 +160,7 @@ export class UserService extends BaseService {
           *,
           category:categories(category_name),
           images:item_image(
-            file:d_file(url, file_type),
+            file:file(url, file_type),
             is_primary,
             display_order
           )

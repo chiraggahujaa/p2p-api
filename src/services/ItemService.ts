@@ -449,11 +449,11 @@ export class ItemService extends BaseService {
           location:location(city, state),
                       owner:users(full_name, avatar_url, trust_score),
           images:item_image(
-            file:d_file(url),
+            file:file(url),
             is_primary
           )
         `)
-        .eq('category_id', currentItem.data.category_id)
+        .eq('category_id', currentItem.data.categoryId)
         .eq('is_active', true)
         .eq('status', 'available')
         .neq('id', itemId)
