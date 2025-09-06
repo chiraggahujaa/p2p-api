@@ -10,7 +10,7 @@
     "start": "node dist/index.js",
     "lint": "echo 'No linter configured - skipping'",
     "typecheck": "tsc --noEmit",
-    "postinstall": "lefthook install",
+    "postinstall": "if [ -d .git ]; then lefthook install; fi",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
