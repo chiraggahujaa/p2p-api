@@ -678,4 +678,81 @@ export class ItemService extends BaseService {
       throw error;
     }
   }
+
+  /**
+   * Find all items with images and relations (for list views)
+   */
+  async findAllWithImages(options: QueryOptions): Promise<PaginatedResponse<any>> {
+    try {
+      const { page, limit, filters, orderBy, orderDirection } = options;
+      const offset = (page - 1) * limit;
+
+      let query = supabaseAdmin
+        .from('item')
+        .select(`
+          *,
+          category:categories(category_name),
+          location:location(city, state),
+          owner:users(full_name, avatar_url, trust_score),
+          images:item_image(
+            file:file(url, file_type),
+            is_primary,
+            display_order
+          )
+        `, { count: 'exact' });
+
+      // Apply filters
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
+        });
+      }
+
+      // Apply ordering
+      if (orderBy) {
+        query = query.order(orderBy, { ascending: orderDirection === 'asc' });
+      }
+
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      // Sort images by primary first, then by display order for each item
+      const itemsWithSortedImages = (data || []).map(item => {
+        if (item.images) {
+          item.images.sort((a: any, b: any) => {
+            if (a.is_primary && !b.is_primary) return -1;
+            if (!a.is_primary && b.is_primary) return 1;
+            return a.display_order - b.display_order;
+          });
+        }
+        return item;
+      });
+
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        success: true,
+        data: DataMapper.toCamelCase(itemsWithSortedImages),
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error(`Error in ${this.tableName} findAllWithImages:`, error);
+      throw error;
+    }
+  }
 }

@@ -485,7 +485,7 @@ export class ItemController {
       if (status) filters.status = status;
       if (userId) filters.user_id = userId;
 
-      const result = await this.itemService.findAll({
+      const result = await this.itemService.findAllWithImages({
         page,
         limit,
         filters,
@@ -519,7 +519,7 @@ export class ItemController {
     try {
       const { page, limit } = validatePagination(req.query);
 
-      const result = await this.itemService.findAll({
+      const result = await this.itemService.findAllWithImages({
         page,
         limit,
         filters: {
@@ -556,7 +556,7 @@ export class ItemController {
     try {
       const { page, limit } = validatePagination(req.query);
 
-      const result = await this.itemService.findAll({
+      const result = await this.itemService.findAllWithImages({
         page,
         limit,
         filters: {
