@@ -14,6 +14,7 @@ P2P Backend API is a peer-to-peer item sharing platform built with:
 - **Runtime**: Node.js with TypeScript (ES Modules)
 - **Framework**: Express.js v5
 - **Database**: Supabase (PostgreSQL)
+- **KYC**: DigiLocker integration via Sandbox.co.in
 - **Testing**: Cypress for E2E testing
 - **Architecture**: Layered architecture (Controllers → Services → Database)
 
@@ -193,6 +194,48 @@ export class YourController {
 - **Test Structure**: Organized by feature (auth, items, bookings, etc.)
 - **Test Data**: Managed via fixtures and data generators
 - **Environment**: Separate test database configuration
+
+## KYC System (DigiLocker)
+
+### Overview
+The platform uses DigiLocker-based KYC verification through Sandbox.co.in APIs:
+
+### DigiLocker Endpoints
+- `POST /api/user/kyc/digilocker/initiate` - Initiate verification session
+- `GET /api/user/kyc/digilocker/callback` - Handle DigiLocker callback
+- `GET /api/user/kyc/digilocker/session/:id` - Get session status
+- `POST /api/user/kyc/digilocker/fetch-documents` - Fetch documents
+- `DELETE /api/user/kyc/digilocker/session/:id` - Cancel session
+- `GET /api/user/kyc/digilocker/documents` - Get user documents
+- `GET /api/user/kyc/status` - Get verification status
+
+### DigiLocker Flow
+1. **Session Initiation**: User selects documents and creates session
+2. **Redirect**: User redirected to DigiLocker for authentication
+3. **Authorization**: User provides consent for document access
+4. **Document Fetch**: System retrieves documents from DigiLocker
+5. **Verification Complete**: User marked as verified
+
+### Database Tables
+- `digilocker_sessions` - Session tracking and status
+- `digilocker_documents` - Retrieved document metadata
+- `users.digilocker_verified` - User verification status
+- `users.verification_documents` - List of verified document types
+
+### Environment Variables
+```bash
+# Sandbox.co.in Configuration
+SANDBOX_API_URL=https://api.sandbox.co.in
+SANDBOX_API_KEY=your_api_key
+SANDBOX_CLIENT_ID=your_client_id
+SANDBOX_CLIENT_SECRET=your_client_secret
+SANDBOX_API_VERSION=2.0
+
+# DigiLocker Configuration
+DIGILOCKER_REDIRECT_URL_DEV=http://localhost:3000/kyc/callback
+DIGILOCKER_REDIRECT_URL_PROD=https://your-domain.com/kyc/callback
+DIGILOCKER_SESSION_TIMEOUT=3600
+```
 
 ## Development Commands
 

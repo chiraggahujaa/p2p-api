@@ -11,6 +11,7 @@ import categoryRoutes from './routes/categories.js';
 import cityRoutes from './routes/cities.js';
 import fileRoutes from './routes/files.js';
 import addressRoutes from './routes/addresses.js';
+import digilockerRoutes from './routes/digilocker.js';
 
 // Import middleware
 import {
@@ -30,7 +31,7 @@ import {
 } from './middleware/security.js';
 
 // Load environment variables
-// dotenv.config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -88,6 +89,8 @@ app.use('/api/categories', apiRateLimit, categoryRoutes);
 app.use('/api/cities', apiRateLimit, cityRoutes);
 app.use('/api/files', apiRateLimit, fileRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/user/kyc/digilocker', digilockerRoutes);
+app.use('/api/user/kyc', digilockerRoutes); // For backward compatibility with /status endpoint
 
 // 404 handler - must be after all routes
 app.use((req: Request, res: Response) => {
