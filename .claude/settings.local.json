@@ -19,7 +19,15 @@
       "Bash(npx supabase db rest:*)",
       "Bash(npm install:*)",
       "Bash(npx lefthook:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "WebFetch(*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx api install:*)",
+      "Bash(pkill:*)",
+      "Bash(npx @api/cli@latest install \"@sandbox-docs/v1.0#17aqjd26md5vdo3n\" --lang typescript)"
     ],
     "deny": [],
     "ask": []

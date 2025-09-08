@@ -57,7 +57,26 @@ export class UserController {
 
       const validatedData = updateUserSchema.parse(req.body) as UpdateUserDto;
 
-      const result = await this.userService.updateUser(userId, validatedData);
+      // First check if user exists, if not create them
+      const existingUser = await this.userService.getUserWithDetails(userId);
+      
+      let result;
+      if (!existingUser.success) {
+        // User doesn't exist, create them with the update data
+        const createData = {
+          fullName: validatedData.fullName ?? '',
+          email: req.user?.email ?? '',
+          dobVisibility: validatedData.dobVisibility ?? 'private',
+          ...(validatedData.phoneNumber !== undefined ? { phoneNumber: validatedData.phoneNumber } : {}),
+          ...(validatedData.gender !== undefined ? { gender: validatedData.gender } : {}),
+          ...(validatedData.dob !== undefined ? { dob: validatedData.dob } : {}),
+          ...(validatedData.bio !== undefined ? { bio: validatedData.bio } : {}),
+        };
+        result = await this.userService.createUser(createData);
+      } else {
+        // User exists, update them
+        result = await this.userService.updateUser(userId, validatedData);
+      }
 
       if (!result.success) {
         return res.status(400).json(result);
