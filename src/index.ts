@@ -30,7 +30,7 @@ import {
 } from './middleware/security.js';
 
 // Load environment variables
-// dotenv.config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

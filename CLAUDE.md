@@ -194,6 +194,56 @@ export class YourController {
 - **Test Data**: Managed via fixtures and data generators
 - **Environment**: Separate test database configuration
 
+## Migration and Rollback Guidelines
+
+### File Naming Conventions
+- **Migration files**: `{timestamp}_{description}.sql` (e.g., `20250101120000_create_core_tables.sql`)
+- **Rollback files**: `{timestamp}_rollback_{description}.sql` (e.g., `20250101120000_rollback_create_core_tables.sql`)
+
+### Cross-Referencing Requirements
+- **Migration files** must include at the top:
+  ```sql
+  -- Migration: [Description of what this migration does]
+  -- Created: [Brief summary]
+  -- Rollback: Run supabase/rollbacks/{timestamp}_rollback_{description}.sql
+  ```
+- **Rollback files** must include at the top:
+  ```sql
+  -- Rollback: [Description matching the migration]
+  -- This rollback script reverses migration: {timestamp}_{description}.sql
+  -- Usage: ./supabase/scripts/rollback.sh {timestamp}
+  ```
+
+### Rollback Script Usage
+```bash
+# Rollback a specific migration
+./supabase/scripts/rollback.sh 20250101120000
+
+# The script will:
+# 1. Locate the corresponding rollback file
+# 2. Confirm the rollback action
+# 3. Execute the rollback SQL
+# 4. Report success/failure
+```
+
+### Migration Structure
+```
+p2p-api/
+├── supabase/
+│   ├── migrations/           # Forward migrations
+│   └── seed.sql             # Database seeding
+├── rollbacks/               # Rollback scripts
+└── scripts/
+    └── rollback.sh         # Rollback execution helper
+```
+
+### Best Practices
+- Always test rollbacks before deploying migrations
+- Keep rollbacks in sync with migration changes
+- Document any manual steps required after rollback
+- Never modify existing migration files - create new ones
+- Rollbacks should completely reverse the migration
+
 ## Development Commands
 
 ```bash
@@ -208,6 +258,9 @@ npm start                     # Run production build
 npm run db:push               # Push migrations to database
 npm run db:reset              # Reset database with fresh data
 npm run supabase:generate     # Generate TypeScript types from database
+
+# Database Rollbacks
+./scripts/rollback.sh <timestamp>  # Rollback a specific migration
 
 # Testing
 npm test                      # Run all Cypress tests

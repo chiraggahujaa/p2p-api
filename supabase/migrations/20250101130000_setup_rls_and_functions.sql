@@ -1,9 +1,11 @@
 -- Migration: Row Level Security policies and useful functions
 -- Created: RLS Policies and Database Functions
+-- Rollback: Run rollbacks/20250101130000_rollback_setup_rls_and_functions.sql
 
 -- Enable RLS on all tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE location ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE file ENABLE ROW LEVEL SECURITY;
 ALTER TABLE device ENABLE ROW LEVEL SECURITY;
@@ -26,6 +28,15 @@ CREATE POLICY "Users can update their own profile" ON users
 CREATE POLICY "Anyone can view public user info" ON users
     FOR SELECT USING (is_active = true);
 
+-- Add policy to allow service role (admin client) to insert new users
+-- This is needed for user registration flow
+CREATE POLICY "Service role can insert users" ON users
+    FOR INSERT WITH CHECK (true);
+
+-- Add policy to allow service role to manage all users (for admin operations)
+CREATE POLICY "Service role can manage all users" ON users
+    FOR ALL USING (auth.role() = 'service_role');
+
 -- RLS Policies for location
 CREATE POLICY "Users can view locations" ON location
     FOR SELECT TO authenticated USING (true);
@@ -36,11 +47,33 @@ CREATE POLICY "Users can create locations" ON location
 CREATE POLICY "Users can update their own locations" ON location
     FOR UPDATE TO authenticated USING (
         id IN (
-            SELECT location_id FROM users WHERE id = auth.uid()
+            SELECT location_id FROM user_locations WHERE user_id = auth.uid()
             UNION
             SELECT location_id FROM item WHERE user_id = auth.uid()
         )
     );
+
+-- RLS Policies for user_locations
+CREATE POLICY "Users can view own user_locations"
+    ON user_locations FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own user_locations"
+    ON user_locations FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own user_locations"
+    ON user_locations FOR UPDATE
+    TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own user_locations"
+    ON user_locations FOR DELETE
+    TO authenticated
+    USING (auth.uid() = user_id);
 
 -- RLS Policies for categories
 CREATE POLICY "Anyone can view active categories" ON categories
@@ -61,6 +94,10 @@ CREATE POLICY "Users can update their own files" ON file
 
 CREATE POLICY "Users can delete their own files" ON file
     FOR DELETE USING (user_id = auth.uid());
+
+-- Add policy to allow service role to manage all files (for admin operations)
+CREATE POLICY "Service role can manage all files" ON file
+    FOR ALL USING (auth.role() = 'service_role');
 
 -- RLS Policies for device
 CREATE POLICY "Users can manage their own devices" ON device
@@ -217,8 +254,157 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Note: Analytics functions moved to 005_create_analytics_functions.sql
--- Direct counter updates removed in favor of event-driven analytics architecture
+-- Function to get user's default location
+CREATE OR REPLACE FUNCTION get_user_default_location(user_uuid UUID)
+RETURNS TABLE(
+  location_id UUID,
+  address_line TEXT,
+  city VARCHAR(100),
+  state VARCHAR(100),
+  pincode VARCHAR(20),
+  country VARCHAR(100),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  label VARCHAR(50)
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    l.id,
+    l.address_line,
+    l.city,
+    l.state,
+    l.pincode,
+    l.country,
+    l.latitude,
+    l.longitude,
+    ul.label
+  FROM user_locations ul
+  JOIN location l ON ul.location_id = l.id
+  WHERE ul.user_id = user_uuid AND ul.is_default = TRUE
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get all user locations with details
+CREATE OR REPLACE FUNCTION get_user_locations_with_details(user_uuid UUID)
+RETURNS TABLE(
+  id UUID,
+  location_id UUID,
+  address_line TEXT,
+  city VARCHAR(100),
+  state VARCHAR(100),
+  pincode VARCHAR(20),
+  country VARCHAR(100),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  label VARCHAR(50),
+  is_default BOOLEAN,
+  created_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    ul.id,
+    l.id,
+    l.address_line,
+    l.city,
+    l.state,
+    l.pincode,
+    l.country,
+    l.latitude,
+    l.longitude,
+    ul.label,
+    ul.is_default,
+    ul.created_at,
+    ul.updated_at
+  FROM user_locations ul
+  JOIN location l ON ul.location_id = l.id
+  WHERE ul.user_id = user_uuid
+  ORDER BY ul.is_default DESC, ul.created_at ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get items within radius (FIXED - only returns items with coordinates and within radius)
+CREATE OR REPLACE FUNCTION get_items_within_radius(
+    user_lat DECIMAL(10,8),
+    user_lon DECIMAL(11,8),
+    radius_km INTEGER DEFAULT 10,
+    category_filter UUID DEFAULT NULL,
+    price_min DECIMAL DEFAULT NULL,
+    price_max DECIMAL DEFAULT NULL,
+    search_term TEXT DEFAULT NULL,
+    condition_filter TEXT[] DEFAULT NULL,
+    delivery_mode_filter TEXT[] DEFAULT NULL
+)                      
+RETURNS TABLE (
+    item_id UUID,
+    title VARCHAR(255),
+    description TEXT,
+    rent_price_per_day DECIMAL(10,2),
+    category_name VARCHAR(100),
+    distance_km DECIMAL,
+    owner_name VARCHAR(255),
+    image_url TEXT,
+    rating_average DECIMAL(3,2),
+    city VARCHAR(100),
+    condition VARCHAR(20),
+    delivery_mode VARCHAR(20),
+    created_at TIMESTAMPTZ
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        i.id,
+        i.title,
+        i.description,
+        i.rent_price_per_day,
+        c.category_name,
+        calculate_distance(user_lat, user_lon, l.latitude, l.longitude) as distance_km,
+        u.full_name as owner_name,
+        COALESCE(
+            (SELECT f.url FROM item_image ii 
+             JOIN file f ON ii.file_id = f.id 
+             WHERE ii.item_id = i.id AND ii.is_primary = true 
+             LIMIT 1),
+            (SELECT f.url FROM item_image ii 
+             JOIN file f ON ii.file_id = f.id 
+             WHERE ii.item_id = i.id 
+             ORDER BY ii.display_order, ii.created_at 
+             LIMIT 1)
+        ) as image_url,
+        i.rating_average,
+        l.city,
+        i.condition,
+        i.delivery_mode,
+        i.created_at
+    FROM item i
+    JOIN location l ON i.location_id = l.id
+    JOIN categories c ON i.category_id = c.id
+    JOIN users u ON i.user_id = u.id
+    WHERE 
+        i.is_active = true 
+        AND i.status = 'available'
+        -- FIXED: Only include items with actual coordinates
+        AND l.latitude IS NOT NULL 
+        AND l.longitude IS NOT NULL
+        -- FIXED: Only include items within the specified radius
+        AND calculate_distance(user_lat, user_lon, l.latitude, l.longitude) <= radius_km
+        AND (category_filter IS NULL OR i.category_id = category_filter OR 
+             i.category_id IN (SELECT id FROM categories WHERE parent_category_id = category_filter))
+        AND (price_min IS NULL OR i.rent_price_per_day >= price_min)
+        AND (price_max IS NULL OR i.rent_price_per_day <= price_max)
+        AND (search_term IS NULL OR 
+             i.title ILIKE '%' || search_term || '%' OR 
+             i.description ILIKE '%' || search_term || '%' OR
+             c.category_name ILIKE '%' || search_term || '%' OR
+             EXISTS (SELECT 1 FROM unnest(i.tags) tag WHERE tag ILIKE '%' || search_term || '%'))
+        AND (condition_filter IS NULL OR i.condition = ANY(condition_filter))
+        AND (delivery_mode_filter IS NULL OR i.delivery_mode = ANY(delivery_mode_filter) OR i.delivery_mode = 'both')
+    ORDER BY distance_km, i.rating_average DESC, i.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Create triggers
 CREATE TRIGGER trigger_update_item_rating
@@ -232,13 +418,10 @@ CREATE TRIGGER trigger_update_trust_score
           OR NEW.rating_by_borrower IS DISTINCT FROM OLD.rating_by_borrower)
     EXECUTE FUNCTION update_user_trust_score();
 
--- Note: Analytics triggers moved to 005_create_analytics_functions.sql
--- Using event-driven analytics architecture instead of direct counter updates
-
 -- Create useful views for common queries
 
--- View for item details with location and category info
-CREATE VIEW v_items_detailed AS
+-- View for item details with location and category info (RENAMED from v_items_detailed)
+CREATE VIEW items_detailed AS
 SELECT 
     i.*,
     l.city,
@@ -262,8 +445,8 @@ JOIN categories c ON i.category_id = c.id
 JOIN users u ON i.user_id = u.id
 WHERE i.is_active = true;
 
--- View for booking details with user and item info
-CREATE VIEW v_bookings_detailed AS
+-- View for booking details with user and item info (RENAMED from v_bookings_detailed)
+CREATE VIEW bookings_detailed AS
 SELECT 
     b.*,
     lender.full_name as lender_name,
@@ -288,7 +471,13 @@ LEFT JOIN location pickup_loc ON b.pickup_location = pickup_loc.id
 LEFT JOIN location delivery_loc ON b.delivery_location = delivery_loc.id;
 
 -- Grant necessary permissions
-GRANT USAGE ON SCHEMA public TO authenticated, anon;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA public TO authenticated, anon, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated, service_role;
+
+-- Grant specific permissions to service role for file table
+GRANT ALL ON file TO service_role;
+
+-- Grant necessary permissions to service role for users table
+GRANT ALL ON users TO service_role;

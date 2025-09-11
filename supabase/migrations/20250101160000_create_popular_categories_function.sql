@@ -1,5 +1,6 @@
 -- Migration: Create popular categories function
 -- Created: Function to get popular categories based on item count
+-- Rollback: Run rollbacks/20250101160000_rollback_create_popular_categories_function.sql
 
 -- Function to get popular categories based on number of active items
 CREATE OR REPLACE FUNCTION get_popular_categories(

@@ -1,5 +1,6 @@
 -- Migration: Create analytics functions and materialized views
 -- Created: Analytics and metrics functions for P2P Platform
+-- Rollback: Run rollbacks/20250101140000_rollback_create_analytics_functions.sql
 
 -- Function to record analytics events (event-driven architecture)
 CREATE OR REPLACE FUNCTION record_analytics_event(
