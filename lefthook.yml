@@ -38,6 +38,112 @@ pre-commit:
           echo "Please review the above for sensitive information"
           exit 1
         fi
+        
+    # Migration file naming validation
+    - name: "📋 Migration naming"
+      run: |
+        # Check for migration files in staging
+        MIGRATION_FILES=$(git diff --staged --name-only | grep "supabase/migrations/.*\.sql$" || true)
+        if [ -n "$MIGRATION_FILES" ]; then
+          echo "Validating migration file naming conventions..."
+          for file in $MIGRATION_FILES; do
+            filename=$(basename "$file")
+            # Check if filename matches pattern: {timestamp}_{description}.sql
+            if ! echo "$filename" | grep -qE "^[0-9]{14}_[a-z_]+\.sql$"; then
+              echo "❌ Invalid migration filename: $filename"
+              echo "Expected format: {timestamp}_{description}.sql (e.g., 20250101120000_create_core_tables.sql)"
+              echo "- Use 14-digit timestamp (YYYYMMDDHHMMSS)"
+              echo "- Use snake_case for description"
+              echo "- Only lowercase letters, numbers, and underscores allowed"
+              exit 1
+            fi
+          done
+          echo "✅ Migration file naming is valid"
+        fi
+        
+    # Migration-rollback pairing validation
+    - name: "🔄 Migration-rollback pairing"
+      run: |
+        # Check for migration files in staging
+        MIGRATION_FILES=$(git diff --staged --name-only | grep "supabase/migrations/.*\.sql$" || true)
+        if [ -n "$MIGRATION_FILES" ]; then
+          echo "Validating migration-rollback pairing..."
+          for migration_file in $MIGRATION_FILES; do
+            filename=$(basename "$migration_file")
+            # Extract timestamp and description
+            timestamp=$(echo "$filename" | cut -d'_' -f1)
+            description=$(echo "$filename" | sed 's/^[0-9]\{14\}_//' | sed 's/\.sql$//')
+            
+            # Check if corresponding rollback file exists
+            rollback_file="supabase/rollbacks/${timestamp}_rollback_${description}.sql"
+            rollback_staged=$(git diff --staged --name-only | grep "supabase/rollbacks/${timestamp}_rollback_${description}.sql$" || true)
+            
+            if [ ! -f "$rollback_file" ] && [ -z "$rollback_staged" ]; then
+              echo "❌ Missing rollback file for migration: $filename"
+              echo "Expected rollback file: $rollback_file"
+              echo "Please create the corresponding rollback file following the naming convention:"
+              echo "  {timestamp}_rollback_{description}.sql"
+              exit 1
+            fi
+            
+            # If rollback file exists or is staged, validate its header
+            if [ -f "$rollback_file" ] || [ -n "$rollback_staged" ]; then
+              rollback_path="$rollback_file"
+              if [ -n "$rollback_staged" ]; then
+                # For staged files, we need to get content from git index
+                rollback_content=$(git show ":$rollback_file" 2>/dev/null || echo "")
+              else
+                rollback_content=$(head -10 "$rollback_file" 2>/dev/null || echo "")
+              fi
+              
+              # Check if rollback file has proper header comments
+              if [ -n "$rollback_content" ]; then
+                if ! echo "$rollback_content" | grep -q "-- Rollback:"; then
+                  echo "❌ Rollback file missing proper header: $(basename "$rollback_file")"
+                  echo "Expected header format:"
+                  echo "-- Rollback: [Description matching the migration]"
+                  echo "-- This rollback script reverses migration: ${filename}"
+                  echo "-- Usage: ./supabase/scripts/rollback.sh ${timestamp}"
+                  exit 1
+                fi
+              fi
+            fi
+          done
+          echo "✅ Migration-rollback pairing is valid"
+        fi
+        
+        # Also check for rollback files without corresponding migrations
+        ROLLBACK_FILES=$(git diff --staged --name-only | grep "supabase/rollbacks/.*rollback.*\.sql$" || true)
+        if [ -n "$ROLLBACK_FILES" ]; then
+          echo "Validating rollback file naming conventions..."
+          for rollback_file in $ROLLBACK_FILES; do
+            filename=$(basename "$rollback_file")
+            # Check if filename matches pattern: {timestamp}_rollback_{description}.sql
+            if ! echo "$filename" | grep -qE "^[0-9]{14}_rollback_[a-z_]+\.sql$"; then
+              echo "❌ Invalid rollback filename: $filename"
+              echo "Expected format: {timestamp}_rollback_{description}.sql"
+              echo "- Use 14-digit timestamp (YYYYMMDDHHMMSS)"
+              echo "- Include 'rollback' in the name"
+              echo "- Use snake_case for description"
+              exit 1
+            fi
+            
+            # Extract timestamp to check for corresponding migration
+            timestamp=$(echo "$filename" | cut -d'_' -f1)
+            description=$(echo "$filename" | sed 's/^[0-9]\{14\}_rollback_//' | sed 's/\.sql$//')
+            migration_file="supabase/migrations/${timestamp}_${description}.sql"
+            
+            if [ ! -f "$migration_file" ]; then
+              migration_staged=$(git diff --staged --name-only | grep "supabase/migrations/${timestamp}_${description}.sql$" || true)
+              if [ -z "$migration_staged" ]; then
+                echo "❌ Rollback file without corresponding migration: $filename"
+                echo "Expected migration file: supabase/migrations/${timestamp}_${description}.sql"
+                exit 1
+              fi
+            fi
+          done
+          echo "✅ Rollback file naming and pairing is valid"
+        fi
 
 # Pre-push hooks - run before pushing to remote
 pre-push:
