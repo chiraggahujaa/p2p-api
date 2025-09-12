@@ -1,0 +1,67 @@
+{
+  "environment": "development",
+  "api": {
+    "baseUrl": "http://localhost:5000/api",
+    "timeout": 15000,
+    "retryAttempts": 3
+  },
+  "database": {
+    "resetBeforeTests": false,
+    "seedData": true,
+    "preserveData": true
+  },
+  "auth": {
+    "defaultTimeout": 300000,
+    "autoLogin": false,
+    "testUsers": {
+      "borrower": {
+        "email": "test.borrower@dev.com",
+        "password": "DevPassword123!"
+      },
+      "lender": {
+        "email": "test.lender@dev.com",
+        "password": "DevPassword123!"
+      },
+      "admin": {
+        "email": "admin@dev.com",
+        "password": "AdminDevPass123!"
+      }
+    }
+  },
+  "performance": {
+    "thresholds": {
+      "fast": 1000,
+      "medium": 3000,
+      "slow": 5000
+    },
+    "loadTest": {
+      "enabled": true,
+      "maxConcurrency": 10,
+      "duration": 30000
+    }
+  },
+  "features": {
+    "fileUpload": true,
+    "emailNotifications": false,
+    "paymentProcessing": false,
+    "advancedSearch": true
+  },
+  "logging": {
+    "level": "debug",
+    "includeRequestHeaders": true,
+    "includeResponseHeaders": true,
+    "logFailedRequests": true
+  },
+  "screenshots": {
+    "onFailure": true,
+    "onSuccess": false
+  },
+  "video": {
+    "enabled": true,
+    "compression": 32
+  },
+  "retries": {
+    "runMode": 1,
+    "openMode": 0
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "valid_users": [
+    {
+      "fullName": "John Doe",
+      "email": "john.doe@testmail.com",
+      "password": "SecurePass123!",
+      "phoneNumber": "+1234567890",
+      "gender": "male",
+      "dob": "1990-01-15",
+      "dobVisibility": "public",
+      "role": "borrower"
+    },
+    {
+      "fullName": "Jane Smith",
+      "email": "jane.smith@testmail.com",
+      "password": "SecurePass123!",
+      "phoneNumber": "+1234567891",
+      "gender": "female",
+      "dob": "1988-05-22",
+      "dobVisibility": "private",
+      "role": "lender"
+    },
+    {
+      "fullName": "Alice Johnson",
+      "email": "alice.johnson@testmail.com",
+      "password": "SecurePass123!",
+      "phoneNumber": "+1234567892",
+      "gender": "prefer_not_to_say",
+      "dob": "1992-11-08",
+      "dobVisibility": "friends_only",
+      "role": "both"
+    }
+  ],
+  "invalid_users": [
+    {
+      "fullName": "",
+      "email": "invalid.email",
+      "password": "weak",
+      "phoneNumber": "invalid",
+      "gender": "invalid",
+      "dob": "invalid-date",
+      "dobVisibility": "invalid"
+    },
+    {
+      "fullName": "Missing Email User",
+      "password": "SecurePass123!",
+      "phoneNumber": "+1234567890",
+      "gender": "male",
+      "dob": "1990-01-15"
+    },
+    {
+      "fullName": "Short Password User",
+      "email": "short.password@testmail.com",
+      "password": "123",
+      "phoneNumber": "+1234567890",
+      "gender": "male",
+      "dob": "1990-01-15"
+    }
+  ],
+  "profile_updates": [
+    {
+      "fullName": "John Doe Updated",
+      "phoneNumber": "+1987654321",
+      "bio": "Updated bio for testing",
+      "gender": "male",
+      "dobVisibility": "private"
+    },
+    {
+      "fullName": "Jane Smith Professional",
+      "bio": "Professional lender with 5+ years experience",
+      "gender": "female"
+    }
+  ],
+  "admin_user": {
+    "fullName": "Admin User",
+    "email": "admin@testmail.com",
+    "password": "AdminSecurePass123!",
+    "phoneNumber": "+1111111111",
+    "gender": "prefer_not_to_say",
+    "dob": "1985-01-01",
+    "dobVisibility": "private",
+    "role": "admin"
+  }
+}

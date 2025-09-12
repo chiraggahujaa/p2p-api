@@ -1,0 +1,149 @@
+{
+  "valid_bookings": [
+    {
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17",
+      "totalDays": 2,
+      "notes": "Need for weekend photography project"
+    },
+    {
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-07",
+      "totalDays": 6,
+      "notes": "Mountain biking trip in Colorado"
+    },
+    {
+      "startDate": "2025-03-10",
+      "endDate": "2025-03-12",
+      "totalDays": 2,
+      "notes": "Home renovation project"
+    }
+  ],
+  "invalid_bookings": [
+    {
+      "startDate": "2025-01-17",
+      "endDate": "2025-01-15",
+      "totalDays": -2,
+      "notes": "End date before start date"
+    },
+    {
+      "startDate": "2020-01-15",
+      "endDate": "2020-01-17",
+      "totalDays": 2,
+      "notes": "Dates in the past"
+    },
+    {
+      "startDate": "",
+      "endDate": "2025-01-17",
+      "totalDays": 2,
+      "notes": "Missing start date"
+    },
+    {
+      "startDate": "2025-01-15",
+      "endDate": "",
+      "totalDays": 2,
+      "notes": "Missing end date"
+    }
+  ],
+  "booking_status_flows": [
+    {
+      "name": "successful_booking_flow",
+      "steps": [
+        { "action": "create", "expectedStatus": "pending" },
+        { "action": "lender_approve", "expectedStatus": "confirmed" },
+        { "action": "start_rental", "expectedStatus": "active" },
+        { "action": "complete_rental", "expectedStatus": "completed" }
+      ]
+    },
+    {
+      "name": "cancelled_booking_flow",
+      "steps": [
+        { "action": "create", "expectedStatus": "pending" },
+        { "action": "borrower_cancel", "expectedStatus": "cancelled" }
+      ]
+    },
+    {
+      "name": "rejected_booking_flow",
+      "steps": [
+        { "action": "create", "expectedStatus": "pending" },
+        { "action": "lender_reject", "expectedStatus": "rejected" }
+      ]
+    }
+  ],
+  "payment_scenarios": [
+    {
+      "type": "successful_payment",
+      "paymentMethod": "credit_card",
+      "amount": 150.00,
+      "securityDeposit": 500.00,
+      "expectedStatus": "paid"
+    },
+    {
+      "type": "failed_payment",
+      "paymentMethod": "credit_card",
+      "amount": 150.00,
+      "securityDeposit": 500.00,
+      "expectedStatus": "failed"
+    },
+    {
+      "type": "refund_scenario",
+      "paymentMethod": "credit_card",
+      "amount": 150.00,
+      "refundAmount": 150.00,
+      "expectedStatus": "refunded"
+    }
+  ],
+  "date_scenarios": [
+    {
+      "name": "same_day_booking",
+      "daysFromNow": 0,
+      "duration": 1,
+      "shouldSucceed": false,
+      "reason": "Same day booking not allowed"
+    },
+    {
+      "name": "next_day_booking",
+      "daysFromNow": 1,
+      "duration": 2,
+      "shouldSucceed": true
+    },
+    {
+      "name": "future_booking",
+      "daysFromNow": 30,
+      "duration": 7,
+      "shouldSucceed": true
+    },
+    {
+      "name": "long_term_booking",
+      "daysFromNow": 7,
+      "duration": 90,
+      "shouldSucceed": true
+    }
+  ],
+  "conflict_scenarios": [
+    {
+      "name": "overlapping_dates",
+      "booking1": {
+        "startDate": "2025-01-15",
+        "endDate": "2025-01-20"
+      },
+      "booking2": {
+        "startDate": "2025-01-18",
+        "endDate": "2025-01-25"
+      },
+      "shouldConflict": true
+    },
+    {
+      "name": "adjacent_dates",
+      "booking1": {
+        "startDate": "2025-01-15",
+        "endDate": "2025-01-20"
+      },
+      "booking2": {
+        "startDate": "2025-01-21",
+        "endDate": "2025-01-25"
+      },
+      "shouldConflict": false
+    }
+  ]
+}

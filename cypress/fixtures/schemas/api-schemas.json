@@ -1,0 +1,452 @@
+{
+  "user_schema": {
+    "type": "object",
+    "required": ["id", "email", "fullName", "isVerified", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "fullName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 255
+      },
+      "phoneNumber": {
+        "type": "string",
+        "format": "phone"
+      },
+      "gender": {
+        "type": "string",
+        "enum": ["male", "female", "prefer_not_to_say"]
+      },
+      "dob": {
+        "type": "string",
+        "format": "date"
+      },
+      "dobVisibility": {
+        "type": "string",
+        "enum": ["public", "private", "friends_only"]
+      },
+      "trustScore": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 5
+      },
+      "isVerified": {
+        "type": "boolean"
+      },
+      "isActive": {
+        "type": "boolean"
+      },
+      "avatarUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "bio": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "item_schema": {
+    "type": "object",
+    "required": ["id", "title", "description", "categoryId", "condition", "rentPricePerDay", "status", "userId", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 255
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1
+      },
+      "categoryId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "condition": {
+        "type": "string",
+        "enum": ["excellent", "very_good", "good", "fair", "poor"]
+      },
+      "status": {
+        "type": "string",
+        "enum": ["available", "rented", "maintenance", "inactive"]
+      },
+      "rentPricePerDay": {
+        "type": "number",
+        "minimum": 0.01
+      },
+      "securityAmount": {
+        "type": "number",
+        "minimum": 0
+      },
+      "minRentalDays": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "maxRentalDays": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "deliveryMode": {
+        "type": "string",
+        "enum": ["pickup_only", "delivery_only", "pickup_and_delivery"]
+      },
+      "isNegotiable": {
+        "type": "boolean"
+      },
+      "userId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "locationId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "imageUrls": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "ratingAverage": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 5
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "booking_schema": {
+    "type": "object",
+    "required": ["id", "itemId", "lenderUserId", "borrowerUserId", "startDate", "endDate", "totalDays", "bookingStatus", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "itemId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "lenderUserId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "borrowerUserId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "startDate": {
+        "type": "string",
+        "format": "date"
+      },
+      "endDate": {
+        "type": "string",
+        "format": "date"
+      },
+      "totalDays": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "dailyRate": {
+        "type": "number",
+        "minimum": 0
+      },
+      "totalRent": {
+        "type": "number",
+        "minimum": 0
+      },
+      "securityAmount": {
+        "type": "number",
+        "minimum": 0
+      },
+      "totalAmount": {
+        "type": "number",
+        "minimum": 0
+      },
+      "bookingStatus": {
+        "type": "string",
+        "enum": ["pending", "confirmed", "active", "completed", "cancelled", "rejected", "disputed"]
+      },
+      "pickupLocationId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "deliveryLocationId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ratingByLender": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 5
+      },
+      "ratingByBorrower": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 5
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "category_schema": {
+    "type": "object",
+    "required": ["id", "categoryName", "isActive", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "categoryName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "description": {
+        "type": "string"
+      },
+      "iconUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "bannerUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "parentCategoryId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "isActive": {
+        "type": "boolean"
+      },
+      "sortOrder": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "location_schema": {
+    "type": "object",
+    "required": ["id", "addressLine", "city", "state", "pincode", "country", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "addressLine": {
+        "type": "string",
+        "minLength": 1
+      },
+      "city": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "state": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "pincode": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20
+      },
+      "country": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "latitude": {
+        "type": "number",
+        "minimum": -90,
+        "maximum": 90
+      },
+      "longitude": {
+        "type": "number",
+        "minimum": -180,
+        "maximum": 180
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "file_schema": {
+    "type": "object",
+    "required": ["id", "userId", "name", "url", "fileType", "fileSize", "mimeType", "createdAt"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "userId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 255
+      },
+      "url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "fileType": {
+        "type": "string",
+        "enum": ["image", "video", "document", "other"]
+      },
+      "fileSize": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "mimeType": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "bucket": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "path": {
+        "type": "string"
+      },
+      "originalName": {
+        "type": "string",
+        "maxLength": 255
+      },
+      "isPublic": {
+        "type": "boolean"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "api_response_schema": {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          { "type": "object" },
+          { "type": "array" }
+        ]
+      },
+      "error": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "details": {
+        "type": "object"
+      }
+    }
+  },
+  "paginated_response_schema": {
+    "type": "object",
+    "required": ["success", "data", "pagination"],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "data": {
+        "type": "array"
+      },
+      "pagination": {
+        "type": "object",
+        "required": ["page", "limit", "total", "totalPages", "hasNext", "hasPrev"],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "hasPrev": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "valid_addresses": [
+    {
+      "addressLine": "123 Main Street, Apt 4B",
+      "city": "San Francisco",
+      "state": "California",
+      "pincode": "94102",
+      "country": "United States",
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    {
+      "addressLine": "456 Oak Avenue",
+      "city": "Los Angeles",
+      "state": "California",
+      "pincode": "90210",
+      "country": "United States",
+      "latitude": 34.0522,
+      "longitude": -118.2437
+    },
+    {
+      "addressLine": "789 Pine Street, Suite 100",
+      "city": "Seattle",
+      "state": "Washington",
+      "pincode": "98101",
+      "country": "United States",
+      "latitude": 47.6062,
+      "longitude": -122.3321
+    },
+    {
+      "addressLine": "321 Elm Drive",
+      "city": "Denver",
+      "state": "Colorado",
+      "pincode": "80202",
+      "country": "United States",
+      "latitude": 39.7392,
+      "longitude": -104.9903
+    },
+    {
+      "addressLine": "654 Maple Lane",
+      "city": "Austin",
+      "state": "Texas",
+      "pincode": "73301",
+      "country": "United States",
+      "latitude": 30.2672,
+      "longitude": -97.7431
+    }
+  ],
+  "invalid_addresses": [
+    {
+      "addressLine": "",
+      "city": "San Francisco",
+      "state": "California",
+      "pincode": "94102",
+      "country": "United States"
+    },
+    {
+      "addressLine": "123 Main Street",
+      "city": "",
+      "state": "California",
+      "pincode": "94102",
+      "country": "United States"
+    },
+    {
+      "addressLine": "123 Main Street",
+      "city": "San Francisco",
+      "state": "",
+      "pincode": "94102",
+      "country": "United States"
+    },
+    {
+      "addressLine": "123 Main Street",
+      "city": "San Francisco",
+      "state": "California",
+      "pincode": "",
+      "country": "United States"
+    },
+    {
+      "addressLine": "123 Main Street",
+      "city": "San Francisco",
+      "state": "California",
+      "pincode": "invalid",
+      "country": "United States",
+      "latitude": "invalid",
+      "longitude": "invalid"
+    }
+  ],
+  "international_addresses": [
+    {
+      "addressLine": "10 Downing Street",
+      "city": "London",
+      "state": "England",
+      "pincode": "SW1A 2AA",
+      "country": "United Kingdom",
+      "latitude": 51.5099,
+      "longitude": -0.1276
+    },
+    {
+      "addressLine": "1-1 Chiyoda",
+      "city": "Tokyo",
+      "state": "Tokyo",
+      "pincode": "100-8111",
+      "country": "Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503
+    },
+    {
+      "addressLine": "55 Rue du Faubourg Saint-Honoré",
+      "city": "Paris",
+      "state": "Île-de-France",
+      "pincode": "75008",
+      "country": "France",
+      "latitude": 48.8566,
+      "longitude": 2.3522
+    }
+  ],
+  "address_updates": [
+    {
+      "addressLine": "123 Updated Main Street, Apt 4B",
+      "city": "San Francisco",
+      "state": "California",
+      "pincode": "94103",
+      "country": "United States",
+      "latitude": 37.7849,
+      "longitude": -122.4094
+    }
+  ],
+  "coordinate_tests": [
+    {
+      "name": "valid_coordinates",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "expected": "valid"
+    },
+    {
+      "name": "invalid_latitude_high",
+      "latitude": 91.0,
+      "longitude": -74.0060,
+      "expected": "invalid"
+    },
+    {
+      "name": "invalid_latitude_low",
+      "latitude": -91.0,
+      "longitude": -74.0060,
+      "expected": "invalid"
+    },
+    {
+      "name": "invalid_longitude_high",
+      "latitude": 40.7128,
+      "longitude": 181.0,
+      "expected": "invalid"
+    },
+    {
+      "name": "invalid_longitude_low",
+      "latitude": 40.7128,
+      "longitude": -181.0,
+      "expected": "invalid"
+    }
+  ]
+}

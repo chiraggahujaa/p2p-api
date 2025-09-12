@@ -1,0 +1,67 @@
+{
+  "environment": "production",
+  "api": {
+    "baseUrl": "https://api.p2p-platform.com/api",
+    "timeout": 30000,
+    "retryAttempts": 1
+  },
+  "database": {
+    "resetBeforeTests": false,
+    "seedData": false,
+    "preserveData": true
+  },
+  "auth": {
+    "defaultTimeout": 300000,
+    "autoLogin": false,
+    "testUsers": {
+      "borrower": {
+        "email": "test.borrower@prod.com",
+        "password": "ProductionPassword123!"
+      },
+      "lender": {
+        "email": "test.lender@prod.com",
+        "password": "ProductionPassword123!"
+      },
+      "admin": {
+        "email": "admin@prod.com",
+        "password": "AdminProdPass123!"
+      }
+    }
+  },
+  "performance": {
+    "thresholds": {
+      "fast": 1500,
+      "medium": 3000,
+      "slow": 6000
+    },
+    "loadTest": {
+      "enabled": false,
+      "maxConcurrency": 5,
+      "duration": 10000
+    }
+  },
+  "features": {
+    "fileUpload": true,
+    "emailNotifications": true,
+    "paymentProcessing": true,
+    "advancedSearch": true
+  },
+  "logging": {
+    "level": "warn",
+    "includeRequestHeaders": false,
+    "includeResponseHeaders": false,
+    "logFailedRequests": true
+  },
+  "screenshots": {
+    "onFailure": true,
+    "onSuccess": false
+  },
+  "video": {
+    "enabled": false,
+    "compression": 32
+  },
+  "retries": {
+    "runMode": 0,
+    "openMode": 0
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "main_categories": [
+    {
+      "categoryName": "Electronics",
+      "description": "Electronic devices and gadgets",
+      "iconUrl": "https://example.com/icons/electronics.svg",
+      "bannerUrl": "https://example.com/banners/electronics.jpg",
+      "isActive": true,
+      "sortOrder": 1,
+      "subcategories": ["Cameras", "Laptops", "Audio Equipment", "Gaming"]
+    },
+    {
+      "categoryName": "Sports & Recreation",
+      "description": "Sports equipment and recreational items",
+      "iconUrl": "https://example.com/icons/sports.svg",
+      "bannerUrl": "https://example.com/banners/sports.jpg",
+      "isActive": true,
+      "sortOrder": 2,
+      "subcategories": ["Bikes", "Fitness Equipment", "Outdoor Gear", "Water Sports"]
+    },
+    {
+      "categoryName": "Tools & Equipment",
+      "description": "Tools and equipment for various projects",
+      "iconUrl": "https://example.com/icons/tools.svg",
+      "bannerUrl": "https://example.com/banners/tools.jpg",
+      "isActive": true,
+      "sortOrder": 3,
+      "subcategories": ["Power Tools", "Hand Tools", "Construction", "Gardening"]
+    },
+    {
+      "categoryName": "Vehicles",
+      "description": "Vehicles and transportation",
+      "iconUrl": "https://example.com/icons/vehicles.svg",
+      "bannerUrl": "https://example.com/banners/vehicles.jpg",
+      "isActive": true,
+      "sortOrder": 4,
+      "subcategories": ["Cars", "Motorcycles", "Boats", "RVs"]
+    },
+    {
+      "categoryName": "Home & Garden",
+      "description": "Home improvement and garden items",
+      "iconUrl": "https://example.com/icons/home.svg",
+      "bannerUrl": "https://example.com/banners/home.jpg",
+      "isActive": true,
+      "sortOrder": 5,
+      "subcategories": ["Appliances", "Furniture", "Decor", "Garden Tools"]
+    }
+  ],
+  "subcategories": [
+    {
+      "categoryName": "Cameras",
+      "description": "Digital cameras and photography equipment",
+      "isActive": true,
+      "sortOrder": 1
+    },
+    {
+      "categoryName": "Laptops",
+      "description": "Laptops and portable computers",
+      "isActive": true,
+      "sortOrder": 2
+    },
+    {
+      "categoryName": "Bikes",
+      "description": "Bicycles for all purposes",
+      "isActive": true,
+      "sortOrder": 1
+    },
+    {
+      "categoryName": "Power Tools",
+      "description": "Electric and battery-powered tools",
+      "isActive": true,
+      "sortOrder": 1
+    }
+  ],
+  "invalid_categories": [
+    {
+      "categoryName": "",
+      "description": "Category with empty name",
+      "isActive": true
+    },
+    {
+      "categoryName": "Invalid Sort Order",
+      "description": "Category with invalid sort order",
+      "sortOrder": -1,
+      "isActive": true
+    }
+  ],
+  "category_hierarchy": {
+    "Electronics": {
+      "Cameras": ["DSLR", "Mirrorless", "Action Cameras"],
+      "Laptops": ["Gaming", "Business", "Ultrabooks"],
+      "Audio Equipment": ["Headphones", "Speakers", "Microphones"]
+    },
+    "Sports & Recreation": {
+      "Bikes": ["Mountain", "Road", "Hybrid"],
+      "Outdoor Gear": ["Camping", "Hiking", "Climbing"]
+    }
+  }
+}

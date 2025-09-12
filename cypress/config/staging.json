@@ -1,0 +1,67 @@
+{
+  "environment": "staging",
+  "api": {
+    "baseUrl": "https://staging-api.p2p-platform.com/api",
+    "timeout": 20000,
+    "retryAttempts": 2
+  },
+  "database": {
+    "resetBeforeTests": false,
+    "seedData": true,
+    "preserveData": false
+  },
+  "auth": {
+    "defaultTimeout": 300000,
+    "autoLogin": false,
+    "testUsers": {
+      "borrower": {
+        "email": "test.borrower@staging.com",
+        "password": "StagingPassword123!"
+      },
+      "lender": {
+        "email": "test.lender@staging.com",
+        "password": "StagingPassword123!"
+      },
+      "admin": {
+        "email": "admin@staging.com",
+        "password": "AdminStagingPass123!"
+      }
+    }
+  },
+  "performance": {
+    "thresholds": {
+      "fast": 2000,
+      "medium": 5000,
+      "slow": 10000
+    },
+    "loadTest": {
+      "enabled": true,
+      "maxConcurrency": 20,
+      "duration": 60000
+    }
+  },
+  "features": {
+    "fileUpload": true,
+    "emailNotifications": true,
+    "paymentProcessing": true,
+    "advancedSearch": true
+  },
+  "logging": {
+    "level": "info",
+    "includeRequestHeaders": false,
+    "includeResponseHeaders": false,
+    "logFailedRequests": true
+  },
+  "screenshots": {
+    "onFailure": true,
+    "onSuccess": false
+  },
+  "video": {
+    "enabled": false,
+    "compression": 32
+  },
+  "retries": {
+    "runMode": 2,
+    "openMode": 0
+  }
+}

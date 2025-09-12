@@ -1,0 +1,129 @@
+{
+  "valid_items": [
+    {
+      "title": "Professional DSLR Camera",
+      "description": "Canon EOS 5D Mark IV with 24-70mm lens. Perfect for photography and videography projects.",
+      "condition": "excellent",
+      "rentPricePerDay": 50.00,
+      "securityAmount": 500.00,
+      "minRentalDays": 1,
+      "maxRentalDays": 14,
+      "deliveryMode": "pickup_and_delivery",
+      "isNegotiable": true,
+      "tags": ["photography", "camera", "professional", "canon"]
+    },
+    {
+      "title": "Mountain Bike - Trek 3700",
+      "description": "Well-maintained mountain bike suitable for trails and city riding. Includes helmet and basic tools.",
+      "condition": "good",
+      "rentPricePerDay": 25.00,
+      "securityAmount": 200.00,
+      "minRentalDays": 1,
+      "maxRentalDays": 7,
+      "deliveryMode": "pickup_only",
+      "isNegotiable": false,
+      "tags": ["bike", "mountain", "outdoor", "trek"]
+    },
+    {
+      "title": "Power Drill Set",
+      "description": "Cordless power drill with various bits and carrying case. Perfect for home improvement projects.",
+      "condition": "like_new",
+      "rentPricePerDay": 15.00,
+      "securityAmount": 75.00,
+      "minRentalDays": 1,
+      "maxRentalDays": 30,
+      "deliveryMode": "delivery_only",
+      "isNegotiable": true,
+      "tags": ["tools", "drill", "diy", "home improvement"]
+    },
+    {
+      "title": "Gaming Laptop - ASUS ROG",
+      "description": "High-performance gaming laptop with RTX 3070 graphics card. Perfect for gaming and content creation.",
+      "condition": "excellent",
+      "rentPricePerDay": 80.00,
+      "securityAmount": 1000.00,
+      "minRentalDays": 3,
+      "maxRentalDays": 30,
+      "deliveryMode": "pickup_and_delivery",
+      "isNegotiable": false,
+      "tags": ["laptop", "gaming", "asus", "electronics"]
+    },
+    {
+      "title": "Camping Tent - 4 Person",
+      "description": "Waterproof 4-person tent with easy setup. Includes stakes and guylines.",
+      "condition": "good",
+      "rentPricePerDay": 20.00,
+      "securityAmount": 100.00,
+      "minRentalDays": 2,
+      "maxRentalDays": 14,
+      "deliveryMode": "pickup_and_delivery",
+      "isNegotiable": true,
+      "tags": ["camping", "tent", "outdoor", "hiking"]
+    }
+  ],
+  "invalid_items": [
+    {
+      "title": "",
+      "description": "Item with empty title",
+      "condition": "excellent",
+      "rentPricePerDay": 25.00
+    },
+    {
+      "title": "Item with negative price",
+      "description": "This item has a negative price",
+      "condition": "good",
+      "rentPricePerDay": -10.00
+    },
+    {
+      "title": "Item with invalid condition",
+      "description": "This item has an invalid condition",
+      "condition": "invalid_condition",
+      "rentPricePerDay": 25.00
+    },
+    {
+      "title": "Item with no price",
+      "description": "This item is missing price",
+      "condition": "excellent"
+    }
+  ],
+  "item_updates": [
+    {
+      "title": "Updated Professional DSLR Camera",
+      "description": "Updated description with more details about accessories included.",
+      "rentPricePerDay": 55.00,
+      "isNegotiable": false,
+      "tags": ["photography", "camera", "professional", "canon", "updated"]
+    },
+    {
+      "condition": "fair",
+      "rentPricePerDay": 20.00,
+      "securityAmount": 150.00
+    }
+  ],
+  "search_scenarios": [
+    {
+      "query": "camera",
+      "expectedResults": ["Professional DSLR Camera"]
+    },
+    {
+      "query": "outdoor",
+      "expectedResults": ["Mountain Bike - Trek 3700", "Camping Tent - 4 Person"]
+    },
+    {
+      "query": "electronics",
+      "expectedResults": ["Gaming Laptop - ASUS ROG", "Professional DSLR Camera"]
+    }
+  ],
+  "price_filters": [
+    {
+      "minPrice": 0,
+      "maxPrice": 30,
+      "expectedCount": 3
+    },
+    {
+      "minPrice": 50,
+      "maxPrice": 100,
+      "expectedCount": 2
+    }
+  ]
+}

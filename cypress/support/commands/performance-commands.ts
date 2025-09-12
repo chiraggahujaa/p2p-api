@@ -1,0 +1,293 @@
+// Performance testing utilities
+/// <reference types="cypress" />
+
+export interface PerformanceMetrics {
+  responseTime: number;
+  requestStart: number;
+  requestEnd: number;
+  endpointUrl: string;
+  httpMethod: string;
+  statusCode: number;
+}
+
+export interface LoadTestConfig {
+  endpoint: string;
+  method: string;
+  concurrency: number;
+  requests: number;
+  rampUpTime?: number;
+  headers?: { [key: string]: string };
+  body?: any;
+}
+
+export interface LoadTestResults {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number;
+  minResponseTime: number;
+  maxResponseTime: number;
+  requestsPerSecond: number;
+  errorRate: number;
+  testDuration: number;
+}
+
+
+// Measure response time for any request
+Cypress.Commands.add('measureResponseTime', (requestCallback: () => Cypress.Chainable<any>) => {
+  const startTime = Date.now();
+  
+  return requestCallback().then((response) => {
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+    
+    const metrics: PerformanceMetrics = {
+      responseTime,
+      requestStart: startTime,
+      requestEnd: endTime,
+      endpointUrl: response.url || 'unknown',
+      httpMethod: response.method || 'GET',
+      statusCode: response.status,
+    };
+    
+    cy.log(`⏱️ Response time: ${responseTime}ms for ${metrics.httpMethod} ${metrics.endpointUrl}`);
+    
+    return cy.wrap({ response, responseTime: metrics.responseTime });
+  });
+});
+
+// Validate response time against threshold
+Cypress.Commands.add('validateResponseTime', (maxTime: number, actualTime: number) => {
+  if (actualTime > maxTime) {
+    cy.log(`⚠️ Slow response detected: ${actualTime}ms (threshold: ${maxTime}ms)`);
+  }
+  
+  expect(actualTime).to.be.lessThan(maxTime, 
+    `Response time ${actualTime}ms exceeded maximum allowed ${maxTime}ms`
+  );
+});
+
+// Performance test wrapper
+Cypress.Commands.add('performanceTest', (testName: string, requestCallback: () => Cypress.Chainable<any>, maxTime: number) => {
+  cy.log(`🚀 Running performance test: ${testName}`);
+  
+  return cy.measureResponseTime(requestCallback).then((result) => {
+    cy.validateResponseTime(maxTime, result.responseTime);
+    
+    // Store performance metrics for reporting
+    const performanceData = Cypress.env('performanceData') || [];
+    performanceData.push({
+      testName,
+      responseTime: result.responseTime,
+      threshold: maxTime,
+      passed: result.responseTime < maxTime,
+    });
+    Cypress.env('performanceData', performanceData);
+    
+    return cy.wrap({ response: result.response, responseTime: result.responseTime, passed: result.responseTime < maxTime });
+  });
+});
+
+// Load testing - simulate multiple concurrent requests
+Cypress.Commands.add('loadTest', (config: LoadTestConfig) => {
+  cy.log(`📊 Running load test: ${config.concurrency} concurrent requests to ${config.endpoint}`);
+  
+  const startTime = Date.now();
+  const results: PerformanceMetrics[] = [];
+  const promises: Promise<any>[] = [];
+  
+  // Create concurrent requests
+  for (let i = 0; i < config.requests; i++) {
+    const promise = new Promise((resolve) => {
+      const requestStart = Date.now();
+      
+      cy.apiRequest({
+        method: config.method || 'GET',
+        url: config.endpoint,
+        headers: config.headers || {},
+        body: config.body,
+        failOnStatusCode: false,
+      }).then((response) => {
+        const requestEnd = Date.now();
+        
+        results.push({
+          responseTime: requestEnd - requestStart,
+          requestStart,
+          requestEnd,
+          endpointUrl: config.endpoint,
+          httpMethod: config.method || 'GET',
+          statusCode: response.status,
+        });
+        
+        resolve(response);
+      });
+    });
+    
+    promises.push(promise);
+    
+    // Add ramp-up delay if specified
+    if (config.rampUpTime && i > 0) {
+      cy.wait(config.rampUpTime / config.requests);
+    }
+  }
+  
+  return cy.wrap(Promise.all(promises)).then(() => {
+    const endTime = Date.now();
+    const testDuration = endTime - startTime;
+    
+    // Calculate statistics
+    const responseTimes = results.map(r => r.responseTime);
+    const successfulRequests = results.filter(r => r.statusCode >= 200 && r.statusCode < 400).length;
+    const failedRequests = results.length - successfulRequests;
+    
+    const loadTestResults: LoadTestResults = {
+      totalRequests: results.length,
+      successfulRequests,
+      failedRequests,
+      averageResponseTime: responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length,
+      minResponseTime: Math.min(...responseTimes),
+      maxResponseTime: Math.max(...responseTimes),
+      requestsPerSecond: (results.length / testDuration) * 1000,
+      errorRate: (failedRequests / results.length) * 100,
+      testDuration,
+    };
+    
+    cy.log(`📈 Load test results:`);
+    cy.log(`   Total requests: ${loadTestResults.totalRequests}`);
+    cy.log(`   Successful: ${loadTestResults.successfulRequests}`);
+    cy.log(`   Failed: ${loadTestResults.failedRequests}`);
+    cy.log(`   Average response time: ${loadTestResults.averageResponseTime.toFixed(2)}ms`);
+    cy.log(`   Requests per second: ${loadTestResults.requestsPerSecond.toFixed(2)}`);
+    cy.log(`   Error rate: ${loadTestResults.errorRate.toFixed(2)}%`);
+    
+    return cy.wrap(loadTestResults);
+  });
+});
+
+// Stress testing - gradually increase load
+Cypress.Commands.add('stressTest', (endpoint: string, duration: number) => {
+  cy.log(`💪 Running stress test on ${endpoint} for ${duration}ms`);
+  
+  const startConcurrency = 1;
+  const maxConcurrency = 20;
+  const stepDuration = duration / 10;
+  
+  const results: LoadTestResults[] = [];
+  
+  for (let concurrency = startConcurrency; concurrency <= maxConcurrency; concurrency += 2) {
+    cy.loadTest({
+      endpoint,
+      method: 'GET',
+      concurrency,
+      requests: concurrency * 2,
+    }).then((result) => {
+      results.push(result);
+      
+      // Stop if error rate exceeds 10%
+      if (result.errorRate > 10) {
+        cy.log(`⚠️ Stopping stress test - error rate too high: ${result.errorRate.toFixed(2)}%`);
+        return results;
+      }
+    });
+    
+    cy.wait(stepDuration);
+  }
+  
+  return cy.wrap(results[results.length - 1]);
+});
+
+// Concurrency testing - fixed concurrent requests
+Cypress.Commands.add('concurrencyTest', (endpoint: string, concurrentRequests: number, options?: { method?: string; body?: any; headers?: { [key: string]: string } }) => {
+  return cy.loadTest({
+    endpoint,
+    method: options?.method || 'GET',
+    concurrency: concurrentRequests,
+    requests: concurrentRequests,
+    body: options?.body,
+    headers: options?.headers,
+  });
+});
+
+// Benchmark endpoint with multiple samples
+Cypress.Commands.add('benchmarkEndpoint', (endpoint: string, samples: number = 10) => {
+  cy.log(`📊 Benchmarking ${endpoint} with ${samples} samples`);
+  
+  const metrics: { response: any; responseTime: number }[] = [];
+  
+  for (let i = 0; i < samples; i++) {
+    cy.measureResponseTime(() => {
+      return cy.apiRequest({
+        method: 'GET',
+        url: endpoint,
+      });
+    }).then((metric) => {
+      metrics.push(metric);
+    });
+    
+    // Small delay between samples
+    cy.wait(100);
+  }
+  
+  return cy.wrap(metrics).then((allMetrics) => {
+    const responseTimes = allMetrics.map(m => m.responseTime);
+    const average = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+    const min = Math.min(...responseTimes);
+    const max = Math.max(...responseTimes);
+    
+    cy.log(`📈 Benchmark results for ${endpoint}:`);
+    cy.log(`   Samples: ${samples}`);
+    cy.log(`   Average: ${average.toFixed(2)}ms`);
+    cy.log(`   Min: ${min}ms`);
+    cy.log(`   Max: ${max}ms`);
+    
+    return allMetrics;
+  });
+});
+
+// Monitor memory usage (if supported by environment)
+Cypress.Commands.add('monitorMemoryUsage', () => {
+  return cy.window().then((win) => {
+    if ('performance' in win && 'memory' in win.performance) {
+      const memory = (win.performance as any).memory;
+      const memoryUsage = {
+        usedJSHeapSize: memory.usedJSHeapSize,
+        totalJSHeapSize: memory.totalJSHeapSize,
+        jsHeapSizeLimit: memory.jsHeapSizeLimit,
+        timestamp: Date.now(),
+      };
+      
+      cy.log(`💾 Memory usage: ${(memoryUsage.usedJSHeapSize / 1048576).toFixed(2)}MB`);
+      
+      return memoryUsage;
+    } else {
+      cy.log('ℹ️ Memory monitoring not available in this environment');
+      return null;
+    }
+  });
+});
+
+// Validate performance against baseline
+Cypress.Commands.add('validatePerformanceBaseline', (metrics: PerformanceMetrics, baseline: number) => {
+  const performanceRatio = metrics.responseTime / baseline;
+  
+  if (performanceRatio > 1.5) {
+    cy.log(`⚠️ Performance degradation detected: ${(performanceRatio * 100).toFixed(1)}% of baseline`);
+  } else if (performanceRatio < 0.8) {
+    cy.log(`✨ Performance improvement detected: ${(performanceRatio * 100).toFixed(1)}% of baseline`);
+  }
+  
+  // Store performance comparison
+  const performanceComparisons = Cypress.env('performanceComparisons') || [];
+  performanceComparisons.push({
+    endpoint: metrics.endpointUrl,
+    current: metrics.responseTime,
+    baseline,
+    ratio: performanceRatio,
+    timestamp: Date.now(),
+  });
+  Cypress.env('performanceComparisons', performanceComparisons);
+  
+  return cy.wrap(metrics);
+});
+
+export {};
