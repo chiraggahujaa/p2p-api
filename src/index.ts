@@ -29,8 +29,9 @@ import {
   validateContentType,
 } from './middleware/security.js';
 
-// Load environment variables
-dotenv.config();
+const environment = process.env.NODE_ENV || 'development';
+console.log(`Loading environment: ${environment}`);
+dotenv.config({ path: `.env.${environment}` });
 
 const app = express();
 const PORT = process.env.PORT || 5000;

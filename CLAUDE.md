@@ -217,7 +217,7 @@ export class YourController {
 ### Rollback Script Usage
 ```bash
 # Rollback a specific migration
-./supabase/scripts/rollback.sh 20250101120000
+./supabase/scripts/rollback.sh 20250101160000
 
 # The script will:
 # 1. Locate the corresponding rollback file

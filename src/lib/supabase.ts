@@ -2,7 +2,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import { getFrontendUrl } from '../utils/environment.js';
 
-dotenv.config();
+const environment = process.env.NODE_ENV || 'development';
+dotenv.config({ path: `.env.${environment}` });
 
 // Types for different client configurations
 export interface SupabaseConfig {

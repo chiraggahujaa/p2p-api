@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "NODE_ENV=development nodemon",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "NODE_ENV=production node dist/index.js",
     "lint": "echo 'No linter configured - skipping'",
     "typecheck": "tsc --noEmit",
     "postinstall": "if [ -d .git ]; then lefthook install; fi",
