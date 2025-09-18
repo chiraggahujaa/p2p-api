@@ -20,7 +20,7 @@ export const createUserProfile = async (userId: string, userData: any) => {
         email: userData.email || null,
         phone_number: userData.phone || null,
         avatar_url: userData.avatar_url || null,
-        is_verified: userData.email_confirmed_at ? true : false,
+        is_verified: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
