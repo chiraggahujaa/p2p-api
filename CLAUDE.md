@@ -249,6 +249,8 @@ p2p-api/
 ```bash
 # Development
 npm run dev                    # Start development server with nodemon
+npm run dev:prod              # Start development server against production environment
+npm run dev:staging           # Start development server against staging environment
 
 # Building
 npm run build                  # Compile TypeScript to dist/

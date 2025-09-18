@@ -149,6 +149,8 @@ npm run supabase:status
 
 ### Development
 - `npm run dev` - Start development server
+- `npm run dev:prod` - Start development server against production environment
+- `npm run dev:staging` - Start development server against staging environment
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 

@@ -567,8 +567,9 @@ export class AuthController {
     }
   }
 
-  // Google OAuth Methods
-  static async signInWithGoogle(req: Request, res: Response) {
+
+  // Unified Google Authentication (handles both sign-in and sign-up)
+  static async authenticateWithGoogle(req: Request, res: Response) {
     try {
       const { accessToken, idToken } = req.body as { accessToken?: string; idToken?: string };
 
@@ -579,7 +580,7 @@ export class AuthController {
         });
       }
 
-      // Sign in with Google using Supabase
+      // Authenticate with Google using Supabase
       const params: any = { provider: 'google', token: idToken };
       if (accessToken && accessToken.length > 0) params.access_token = accessToken;
       const { data, error } = await supabaseAdmin.auth.signInWithIdToken(params);
@@ -591,111 +592,43 @@ export class AuthController {
         });
       }
 
-      // If this is a new user (first time Google sign-in), create a profile
-      if (data.user && !data.user.user_metadata?.profile_created) {
-        try {
-          console.log('Creating Google user profile for:', data.user.id);
-          
-          const profileResult = await createUserProfile(data.user.id, {
-            name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || 'Google User',
-            email: data.user.email,
-            avatar_url: data.user.user_metadata?.avatar_url || null,
-            email_confirmed_at: data.user.email_confirmed_at,
-          });
-
-          if (profileResult.error) {
-            console.error('Google user profile creation error:', profileResult.error);
-          } else {
-            console.log('Google user profile created successfully:', profileResult.data);
-            
-            // Update user metadata to mark profile as created
-            await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
-              user_metadata: {
-                ...data.user.user_metadata,
-                profile_created: true,
-                provider: 'google',
-              }
-            });
-          }
-        } catch (profileError) {
-          console.error('Google profile creation exception:', profileError);
-        }
-      }
-
-      res.json({
-        success: true,
-        data: {
-          user: data.user,
-          session: data.session,
-        },
-        message: 'Google sign-in successful',
-      });
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to sign in with Google',
-      });
-    }
-  }
-
-  static async signUpWithGoogle(req: Request, res: Response) {
-    try {
-      const { accessToken, idToken } = req.body as { accessToken?: string; idToken?: string };
-
-      if (!idToken) {
-        return res.status(400).json({
-          success: false,
-          error: 'ID token is required',
-        });
-      }
-
-      // Sign up with Google using Supabase
-      const params: any = { provider: 'google', token: idToken };
-      if (accessToken && accessToken.length > 0) params.access_token = accessToken;
-      const { data, error } = await supabaseAdmin.auth.signInWithIdToken(params);
-
-      if (error) {
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      // For Google sign-up, enforce email uniqueness in our users table and create profile
+      // Check if user already exists in our users table to determine if this is sign-in or sign-up
+      let isNewUser = false;
       if (data.user) {
         if (data.user.email) {
-          const taken = await isEmailTaken(data.user.email);
-          if (taken) {
-            return res.status(409).json({ success: false, error: 'Email already exists' });
-          }
+          const emailExists = await isEmailTaken(data.user.email);
+          isNewUser = !emailExists;
         }
-        try {
-          console.log('Creating Google sign-up profile for:', data.user.id);
-          
-          const profileResult = await createUserProfile(data.user.id, {
-            name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || 'Google User',
-            email: data.user.email,
-            avatar_url: data.user.user_metadata?.avatar_url || null,
-            email_confirmed_at: data.user.email_confirmed_at,
-          });
 
-          if (profileResult.error) {
-            console.error('Google sign-up profile creation error:', profileResult.error);
-          } else {
-            console.log('Google sign-up profile created successfully:', profileResult.data);
-            
-            // Update user metadata to mark profile as created
-            await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
-              user_metadata: {
-                ...data.user.user_metadata,
-                profile_created: true,
-                provider: 'google',
-              }
+        // If it's a new user, create profile
+        if (isNewUser) {
+          try {
+            console.log('Creating profile for new Google user:', data.user.id);
+
+            const profileResult = await createUserProfile(data.user.id, {
+              name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || 'Google User',
+              email: data.user.email,
+              avatar_url: data.user.user_metadata?.avatar_url || null,
+              email_confirmed_at: data.user.email_confirmed_at,
             });
+
+            if (profileResult.error) {
+              console.error('Google user profile creation error:', profileResult.error);
+            } else {
+              console.log('Google user profile created successfully:', profileResult.data);
+
+              // Update user metadata to mark profile as created
+              await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+                user_metadata: {
+                  ...data.user.user_metadata,
+                  profile_created: true,
+                  provider: 'google',
+                }
+              });
+            }
+          } catch (profileError) {
+            console.error('Google profile creation exception:', profileError);
           }
-        } catch (profileError) {
-          console.error('Google sign-up profile creation exception:', profileError);
         }
       }
 
@@ -705,13 +638,15 @@ export class AuthController {
           user: data.user,
           session: data.session,
         },
-        message: 'Google sign-up successful',
+        message: isNewUser
+          ? 'Welcome! Your account has been created successfully'
+          : 'Welcome back! Signed in successfully',
       });
     } catch (error) {
-      console.error('Google sign-up error:', error);
+      console.error('Google authentication error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to sign up with Google',
+        error: 'Failed to authenticate with Google',
       });
     }
   }

@@ -85,11 +85,12 @@ export const googleOAuthSchema = z.object({
   accessToken: z.string().min(1, 'Access token is required').optional(),
 });
 
-// Google sign-in validation
-export const googleSignInSchema = googleOAuthSchema;
+// Unified Google authentication validation (allows empty accessToken)
+export const googleUnifiedAuthSchema = z.object({
+  idToken: z.string().min(1, 'ID token is required'),
+  accessToken: z.string().optional(),
+});
 
-// Google sign-up validation
-export const googleSignUpSchema = googleOAuthSchema;
 
 export const resendVerificationEmailSchema = z.object({
   email: emailSchema,

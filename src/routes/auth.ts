@@ -12,8 +12,7 @@ import {
   phoneLoginSchema,
   phoneOtpVerificationSchema,
   phoneUpdateSchema,
-  googleSignInSchema,
-  googleSignUpSchema,
+  googleUnifiedAuthSchema,
   resendVerificationEmailSchema
 } from '../validations/auth.js';
 
@@ -269,13 +268,13 @@ router.post('/phone/verify-change', async (req: Request, res: Response) => {
   }
 });
 
-// Google OAuth Routes
-router.post('/google/signin', async (req: Request, res: Response) => {
+// Google OAuth Routes - Unified Authentication
+router.post('/google/auth', async (req: Request, res: Response) => {
   try {
     // Validate request data with Zod
-    googleSignInSchema.parse(req.body);
-    
-    await AuthController.signInWithGoogle(req, res);
+    googleUnifiedAuthSchema.parse(req.body);
+
+    await AuthController.authenticateWithGoogle(req, res);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -284,7 +283,7 @@ router.post('/google/signin', async (req: Request, res: Response) => {
         details: error.issues,
       });
     }
-    
+
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -292,27 +291,6 @@ router.post('/google/signin', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/google/signup', async (req: Request, res: Response) => {
-  try {
-    // Validate request data with Zod
-    googleSignUpSchema.parse(req.body);
-    
-    await AuthController.signUpWithGoogle(req, res);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: error.issues,
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-    });
-  }
-});
 
 // POST /api/auth/resend-verification - Resend verification email
 router.post('/resend-verification', async (req: Request, res: Response) => {

@@ -5,6 +5,12 @@ import { getFrontendUrl } from '../utils/environment.js';
 const environment = process.env.NODE_ENV || 'development';
 dotenv.config({ path: `.env.${environment}` });
 
+// Production environment warning
+if (environment === 'production') {
+  console.log('🚨 PRODUCTION ENVIRONMENT - USE WITH CAUTION 🚨');
+  console.log(`Database: ${process.env.SUPABASE_URL?.slice(0, 30)}...`);
+}
+
 // Types for different client configurations
 export interface SupabaseConfig {
   url: string;
