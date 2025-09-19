@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import { OpenWeatherCityProvider, type CityRecord as OpenWeatherCityRecord } from './cityProviders/OpenWeatherCityProvider.js';
+import indianCitiesData from '../data/indian-cities.json';
 
 type City = {
   name: string;
@@ -13,33 +14,7 @@ export class CityService {
   private static cacheTtlMs = Number(process.env.CITIES_CACHE_TTL_MS ?? `${60 * 60 * 1000}`); // default 1h
   private static cachedCities: City[] | null = null;
 
-  private static readonly fallbackCities: City[] = [
-    { name: 'New Delhi', latitude: 28.6139, longitude: 77.2090 },
-    { name: 'Mumbai', latitude: 19.0760, longitude: 72.8777 },
-    { name: 'Bengaluru', latitude: 12.9716, longitude: 77.5946 },
-    { name: 'Pune', latitude: 18.5204, longitude: 73.8567 },
-    { name: 'Chennai', latitude: 13.0827, longitude: 80.2707 },
-    { name: 'Hyderabad', latitude: 17.3850, longitude: 78.4867 },
-    { name: 'Kolkata', latitude: 22.5726, longitude: 88.3639 },
-    { name: 'Ahmedabad', latitude: 23.0225, longitude: 72.5714 },
-    { name: 'Jaipur', latitude: 26.9124, longitude: 75.7873 },
-    { name: 'Surat', latitude: 21.1702, longitude: 72.8311 },
-    { name: 'Lucknow', latitude: 26.8467, longitude: 80.9462 },
-    { name: 'Kanpur', latitude: 26.4499, longitude: 80.3319 },
-    { name: 'Nagpur', latitude: 21.1458, longitude: 79.0882 },
-    { name: 'Indore', latitude: 22.7196, longitude: 75.8577 },
-    { name: 'Thane', latitude: 19.2183, longitude: 72.9781 },
-    { name: 'Bhopal', latitude: 23.2599, longitude: 77.4126 },
-    { name: 'Visakhapatnam', latitude: 17.6868, longitude: 83.2185 },
-    { name: 'Patna', latitude: 25.5941, longitude: 85.1376 },
-    { name: 'Vadodara', latitude: 22.3072, longitude: 73.1812 },
-    { name: 'Ghaziabad', latitude: 28.6692, longitude: 77.4538 },
-    { name: 'Agra', latitude: 27.1767, longitude: 78.0081 },
-    { name: 'Noida', latitude: 28.5355, longitude: 77.3910 },
-    { name: 'Gurgaon', latitude: 28.4595, longitude: 77.0266 },
-    { name: 'Coimbatore', latitude: 11.0168, longitude: 76.9558 },
-    { name: 'Kochi', latitude: 9.9312, longitude: 76.2673 },
-  ];
+  private static readonly comprehensiveCities: City[] = indianCitiesData as City[];
 
   private static async loadCities(): Promise<City[]> {
     const now = Date.now();
@@ -47,10 +22,9 @@ export class CityService {
       return this.cachedCities;
     }
 
-    // Without GeoDB bulk listing, default to fallback and augment on-demand via OpenWeather
-    this.cachedCities = this.fallbackCities;
+    this.cachedCities = this.comprehensiveCities;
     this.cachedAt = now;
-    return this.fallbackCities;
+    return this.comprehensiveCities;
   }
 
   private static normalizeRecords(records: Array<OpenWeatherCityRecord | City>): City[] {
@@ -67,12 +41,12 @@ export class CityService {
 
   public static async augmentWithPreferredIfMissing(prefer?: string): Promise<void> {
     if (!prefer || !prefer.trim()) return;
-    const names = (this.cachedCities ?? this.fallbackCities).map(c => c.name.toLowerCase());
+    const names = (this.cachedCities ?? this.comprehensiveCities).map(c => c.name.toLowerCase());
     if (names.includes(prefer.trim().toLowerCase())) return;
     try {
       const found = await OpenWeatherCityProvider.searchIndianCitiesByName(prefer.trim(), 1);
       if (found.length > 0) {
-        const merged = this.normalizeRecords([...(this.cachedCities ?? this.fallbackCities), ...found]);
+        const merged = this.normalizeRecords([...(this.cachedCities ?? this.comprehensiveCities), ...found]);
         this.cachedCities = merged;
         this.cachedAt = Date.now();
       }
@@ -82,7 +56,7 @@ export class CityService {
   }
 
   public static getAllCitiesAlphabetical(): string[] {
-    const source = this.cachedCities ?? this.fallbackCities;
+    const source = this.cachedCities ?? this.comprehensiveCities;
     return [...source].map(c => c.name).sort((a, b) => a.localeCompare(b));
   }
 
@@ -99,7 +73,7 @@ export class CityService {
       return null;
     }
 
-    const source = this.cachedCities ?? this.fallbackCities;
+    const source = this.cachedCities ?? this.comprehensiveCities;
     let nearest: City | null = null;
     let bestDistance = Number.POSITIVE_INFINITY;
     for (const city of source) {
@@ -130,7 +104,7 @@ export class CityService {
   }
 
   public static getCityCoordinates(cityName: string): City | null {
-    const source = this.cachedCities ?? this.fallbackCities;
+    const source = this.cachedCities ?? this.comprehensiveCities;
     const cityNameLower = cityName.trim().toLowerCase();
     
     const found = source.find(city => 
