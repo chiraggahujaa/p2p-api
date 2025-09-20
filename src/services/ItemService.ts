@@ -1,14 +1,19 @@
 // Item service with specialized operations
 
-import { BaseService, QueryOptions } from './BaseService.js';
-import { supabaseAdmin } from '../utils/database.js';
-import { Item, CreateItemDto, UpdateItemDto, ItemSearchFilters, CreateItemDtoWithAddress } from '../types/item.js';
-import { ApiResponse, PaginatedResponse } from '../types/common.js';
-import { DataMapper } from '../utils/mappers.js';
-import { LocationService, CreateLocationDto } from './LocationService.js';
-import { AddressService } from './AddressService.js';
-import { ValidationHelper } from '../utils/validation.js';
-import { ItemImageService } from './ItemImageService.js';
+import { BaseService, QueryOptions } from "./BaseService.js";
+import { supabaseAdmin } from "../utils/database.js";
+import {
+  Item,
+  CreateItemDto,
+  UpdateItemDto,
+  ItemSearchFilters,
+  CreateItemDtoWithAddress,
+} from "../types/item.js";
+import { ApiResponse, PaginatedResponse } from "../types/common.js";
+import { DataMapper } from "../utils/mappers.js";
+import { LocationService, CreateLocationDto } from "./LocationService.js";
+import { ValidationHelper } from "../utils/validation.js";
+import { ItemImageService } from "./ItemImageService.js";
 
 export class ItemService extends BaseService {
   private itemImageService: ItemImageService;
@@ -18,25 +23,35 @@ export class ItemService extends BaseService {
     this.itemImageService = new ItemImageService();
   }
 
-
-
   /**
    * Create a new item
    */
-  async createItem(userId: string, itemData: CreateItemDto): Promise<ApiResponse<Item>>;
-  async createItem(userId: string, itemData: CreateItemDtoWithAddress): Promise<ApiResponse<Item>>;
-  async createItem(userId: string, itemData: CreateItemDto | CreateItemDtoWithAddress): Promise<ApiResponse<Item>> {
+  async createItem(
+    userId: string,
+    itemData: CreateItemDto
+  ): Promise<ApiResponse<Item>>;
+  async createItem(
+    userId: string,
+    itemData: CreateItemDtoWithAddress
+  ): Promise<ApiResponse<Item>>;
+  async createItem(
+    userId: string,
+    itemData: CreateItemDto | CreateItemDtoWithAddress
+  ): Promise<ApiResponse<Item>> {
     try {
       let locationId: string;
 
       // Check if this is CreateItemDtoWithAddress (has addressData)
-      if ('addressData' in itemData) {
+      if ("addressData" in itemData) {
         // Resolve location from address data
-        const locationResult = await LocationService.resolveFromAddress(itemData.addressData);
+        const locationResult = await LocationService.resolveFromAddress(
+          itemData.addressData
+        );
         if (!locationResult.success) {
           return {
             success: false,
-            error: locationResult.error || 'Failed to resolve location from address',
+            error:
+              locationResult.error || "Failed to resolve location from address",
           };
         }
         locationId = locationResult.data!.id;
@@ -54,12 +69,12 @@ export class ItemService extends BaseService {
         securityAmount: itemData.securityAmount ?? 0,
         rentPricePerDay: itemData.rentPricePerDay,
         locationId: locationId,
-        deliveryMode: itemData.deliveryMode || 'none',
+        deliveryMode: itemData.deliveryMode || "none",
         minRentalDays: itemData.minRentalDays || 1,
         maxRentalDays: itemData.maxRentalDays || 30,
         isNegotiable: itemData.isNegotiable || false,
         tags: itemData.tags || [],
-        status: 'available',
+        status: "available",
         ratingAverage: 0,
         ratingCount: 0,
         isActive: true,
@@ -72,40 +87,48 @@ export class ItemService extends BaseService {
       }
 
       if (itemData.imageUrls && itemData.imageUrls.length > 0) {
-        const imageResult = await this.itemImageService.createItemImages(result.data.id, itemData.imageUrls);
+        const imageResult = await this.itemImageService.createItemImages(
+          result.data.id,
+          itemData.imageUrls
+        );
         if (!imageResult.success) {
           return {
             success: false,
-            error: 'Item created but failed to save images',
+            error: "Item created but failed to save images",
           };
         }
       }
 
       return result;
     } catch (error) {
-      console.error('Error creating item:', error);
+      console.error("Error creating item:", error);
       throw error;
     }
   }
 
   /**
-   * Update item
+   * Update item (with cache invalidation)
    */
-  async updateItem(itemId: string, userId: string, itemData: UpdateItemDto): Promise<ApiResponse<Item>> {
+  async updateItem(
+    itemId: string,
+    userId: string,
+    itemData: UpdateItemDto
+  ): Promise<ApiResponse<Item>> {
     try {
       // First verify ownership
       const ownershipCheck = await this.verifyOwnership(itemId, userId);
       if (!ownershipCheck.success) {
         return {
           success: false,
-          error: ownershipCheck.error || 'Ownership verification failed',
+          error: ownershipCheck.error || "Ownership verification failed",
         };
       }
 
       const result = await this.update(itemId, itemData);
+
       return result;
     } catch (error) {
-      console.error('Error updating item:', error);
+      console.error("Error updating item:", error);
       throw error;
     }
   }
@@ -116,41 +139,48 @@ export class ItemService extends BaseService {
   async getItemWithDetails(itemId: string): Promise<ApiResponse<any>> {
     try {
       const { data, error } = await supabaseAdmin
-        .from('item')
-        .select(`
-          *,
-          category:categories(category_name, description),
-          location:location(*),
-                      owner:users(id, full_name, avatar_url, trust_score, is_verified),
-          images:item_image(
-            file:file(url, file_type, alt_text),
+        .from("item")
+        .select(
+          `
+          id, title, description, condition, security_amount, rent_price_per_day,
+          delivery_mode, min_rental_days, max_rental_days, is_negotiable, tags,
+          status, rating_average, rating_count, created_at, updated_at,
+          category:categories!inner(id, category_name, description),
+          location:location!inner(id, city, state, latitude, longitude, address_line),
+          owner:users!inner(id, full_name, avatar_url, trust_score, is_verified),
+          images:item_image!left(
+            file:file!inner(url, file_type, alt_text),
             is_primary,
             display_order
           ),
-          reviews:item_review(
+          reviews:item_review!left(
             rating,
             review_text,
             is_verified,
             created_at,
-            user:users(full_name, avatar_url)
+            user:users!inner(full_name, avatar_url)
           )
-        `)
-        .eq('id', itemId)
-        .eq('is_active', true)
+        `
+        )
+        .eq("id", itemId)
+        .eq("is_active", true)
+        .order("display_order", { ascending: true, foreignTable: "item_image" })
+        .order("created_at", { ascending: false, foreignTable: "item_review" })
+        .limit(5, { foreignTable: "item_review" })
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return {
             success: false,
-            error: 'Item not found',
+            error: "Item not found",
           };
         }
         throw new Error(`Database error: ${error.message}`);
       }
 
       // Sort images by primary first, then by display order
-      if (data.images) {
+      if (data.images?.length) {
         data.images.sort((a: any, b: any) => {
           if (a.is_primary && !b.is_primary) return -1;
           if (!a.is_primary && b.is_primary) return 1;
@@ -158,306 +188,135 @@ export class ItemService extends BaseService {
         });
       }
 
-      // Sort reviews by newest first
-      if (data.reviews) {
-        data.reviews.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      }
-
       return {
         success: true,
         data: DataMapper.toCamelCase(data),
       };
     } catch (error) {
-      console.error('Error getting item details:', error);
+      console.error("Error getting item details:", error);
       throw error;
     }
   }
 
   /**
-   * Search items with advanced filtering
+   * Search items with optimized single database function call
    */
-  async searchItems(filters: ItemSearchFilters): Promise<PaginatedResponse<any>> {
+  async searchItems(
+    filters: ItemSearchFilters
+  ): Promise<PaginatedResponse<any>> {
     try {
       const {
         categoryId,
+        city,
         location,
         priceRange,
         condition,
         deliveryMode,
         availability,
         searchTerm,
-        sortBy = 'newest',
+        sortBy = "newest",
         page = 1,
-        limit = 20
+        limit = 20,
       } = filters;
 
       const offset = (page - 1) * limit;
-
-      // Use the database function for location-based search if location is provided
-      if (location) {
-        const { data, error } = await supabaseAdmin.rpc('get_items_within_radius', {
-          user_lat: location.latitude,
-          user_lon: location.longitude,
-          radius_km: location.radius || 10,
+      
+      // Use the optimized database function for all searches
+      const { data, error } = await supabaseAdmin.rpc(
+        "search_items_optimized",
+        {
+          user_lat: location?.latitude || null,
+          user_lon: location?.longitude || null,
+          radius_km: location?.radius || 10,
           category_filter: categoryId || null,
+          city_filter: city || null,
           price_min: priceRange?.min || null,
           price_max: priceRange?.max || null,
           search_term: searchTerm || null,
-          condition_filter: condition && condition.length > 0 ? condition : null,
-          delivery_mode_filter: deliveryMode && deliveryMode.length > 0 ? deliveryMode : null,
-        });
-
-        if (error) {
-          throw new Error(`Database error: ${error.message}`);
+          condition_filter:
+            condition && condition.length > 0 ? condition : null,
+          delivery_mode_filter:
+            deliveryMode && deliveryMode.length > 0 ? deliveryMode : null,
+          sort_by: sortBy,
+          page_limit: limit,
+          page_offset: offset,
         }
-
-        let filteredData = data || [];
-
-        // Apply sorting
-        switch (sortBy) {
-          case 'priceAsc':
-            filteredData.sort((a: any, b: any) => a.rent_price_per_day - b.rent_price_per_day);
-            break;
-          case 'priceDesc':
-            filteredData.sort((a: any, b: any) => b.rent_price_per_day - a.rent_price_per_day);
-            break;
-          case 'rating':
-            filteredData.sort((a: any, b: any) => b.rating_average - a.rating_average);
-            break;
-          case 'popular':
-            filteredData.sort((a: any, b: any) => b.booking_count - a.booking_count);
-            break;
-          case 'distance':
-            filteredData.sort((a: any, b: any) => a.distance_km - b.distance_km);
-            break;
-          default: // newest
-            filteredData.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
-
-        // Apply pagination
-        const total = filteredData.length;
-        const paginatedData = filteredData.slice(offset, offset + limit);
-        const totalPages = Math.ceil(total / limit);
-
-        return {
-          success: true,
-          data: DataMapper.toCamelCase(paginatedData),
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-          },
-        };
-      }
-
-      // Regular search without location
-      let query = supabaseAdmin
-        .from('item')
-        .select(`
-          *,
-          category:categories(category_name),
-          location:location(city, state, latitude, longitude),
-                      owner:users(full_name, avatar_url, trust_score),
-          images:item_image(
-            file:file(url),
-            is_primary,
-            display_order
-          )
-        `, { count: 'exact' })
-        .eq('is_active', true)
-        .eq('status', 'available');
-
-      // Apply filters
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      if (priceRange?.min) {
-        query = query.gte('rent_price_per_day', priceRange.min);
-      }
-
-      if (priceRange?.max) {
-        query = query.lte('rent_price_per_day', priceRange.max);
-      }
-
-      if (condition && condition.length > 0) {
-        query = query.in('condition', condition);
-      }
-
-      if (deliveryMode && deliveryMode.length > 0) {
-        const modes = deliveryMode.includes('both') 
-          ? deliveryMode 
-          : [...deliveryMode, 'both'];
-        query = query.in('delivery_mode', modes);
-      }
-
-      if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-      }
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'priceAsc':
-          query = query.order('rent_price_per_day', { ascending: true });
-          break;
-        case 'priceDesc':
-          query = query.order('rent_price_per_day', { ascending: false });
-          break;
-        case 'rating':
-          query = query.order('rating_average', { ascending: false });
-          break;
-        case 'popular':
-          query = query.order('booking_count', { ascending: false });
-          break;
-        default: // newest
-          query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error, count } = await query.range(offset, offset + limit - 1);
+      );
 
       if (error) {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      const totalPages = Math.ceil((count || 0) / limit);
+      const results = data || [];
+      const totalCount = results.length > 0 ? results[0].total_count : 0;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      // Remove total_count from individual items
+      const cleanedData = results.map((item: any) => {
+        const { total_count, ...cleanItem } = item;
+        return cleanItem;
+      });
 
       return {
         success: true,
-        data: DataMapper.toCamelCase(data || []),
+        data: DataMapper.toCamelCase(cleanedData),
         pagination: {
           page,
           limit,
-          total: count || 0,
+          total: totalCount,
           totalPages,
           hasNext: page < totalPages,
           hasPrev: page > 1,
         },
       };
     } catch (error) {
-      console.error('Error searching items:', error);
+      console.error("Error searching items:", error);
       throw error;
     }
   }
 
-  /**
-   * Search items by address string with enhanced location resolution
-   */
-  async searchItemsByAddress(
-    addressQuery: string,
-    filters: Omit<ItemSearchFilters, 'location'> = {},
-    radius: number = 10
-  ): Promise<PaginatedResponse<any>> {
-    try {
-      // First resolve the address to coordinates
-      const addressResult = await AddressService.searchAddresses({
-        query: addressQuery,
-        limit: 1,
-        countryCode: 'IN',
-      });
-
-      if (!addressResult.success || !addressResult.data || addressResult.data.length === 0) {
-        // Return a properly typed PaginatedResponse with error message
-        const errorResponse: PaginatedResponse<any> = {
-          success: false,
-          data: [],
-          pagination: {
-            page: 1,
-            limit: 20,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-          },
-        };
-        // Add error message via type assertion since it's not in the interface
-        (errorResponse as any).error = 'Could not resolve the provided address for search';
-        return errorResponse;
-      }
-
-      const resolvedAddress = addressResult.data[0];
-      if (!resolvedAddress) {
-        const errorResponse: PaginatedResponse<any> = {
-          success: false,
-          data: [],
-          pagination: {
-            page: 1,
-            limit: 20,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-          },
-        };
-        (errorResponse as any).error = 'Could not resolve the provided address';
-        return errorResponse;
-      }
-      
-      if (!resolvedAddress.latitude || !resolvedAddress.longitude) {
-        const errorResponse: PaginatedResponse<any> = {
-          success: false,
-          data: [],
-          pagination: {
-            page: 1,
-            limit: 20,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-          },
-        };
-        (errorResponse as any).error = 'Address found but coordinates are not available';
-        return errorResponse;
-      }
-
-      // Use the existing searchItems method with location coordinates
-      const enhancedFilters: ItemSearchFilters = {
-        ...filters,
-        location: {
-          latitude: resolvedAddress.latitude,
-          longitude: resolvedAddress.longitude,
-          radius,
-        },
-      };
-
-      return await this.searchItems(enhancedFilters);
-
-    } catch (error) {
-      console.error('Error searching items by address:', error);
-      throw error;
-    }
-  }
 
   /**
    * Get similar items based on category and location
    */
-  async getSimilarItems(itemId: string, limit: number = 6): Promise<ApiResponse<any[]>> {
+  async getSimilarItems(
+    itemId: string,
+    limit: number = 6
+  ): Promise<ApiResponse<any[]>> {
     try {
-      // First get the current item details
-      const currentItem = await this.findById(itemId);
-      if (!currentItem.success || !currentItem.data) {
-        return { success: false, error: 'Item not found' };
+      // First get only the category_id of the current item
+      const { data: currentItem, error: currentError } = await supabaseAdmin
+        .from("item")
+        .select("category_id")
+        .eq("id", itemId)
+        .single();
+
+      if (currentError || !currentItem) {
+        return { success: false, error: "Item not found" };
       }
 
       const { data, error } = await supabaseAdmin
-        .from('item')
-        .select(`
-          *,
-          category:categories(category_name),
-          location:location(city, state),
-                      owner:users(full_name, avatar_url, trust_score),
-          images:item_image(
-            file:file(url),
+        .from("item")
+        .select(
+          `
+          id, title, description, condition, rent_price_per_day,
+          rating_average, rating_count, created_at,
+          category:categories!inner(id, category_name),
+          location:location!inner(id, city, state),
+          owner:users!inner(id, full_name, avatar_url, trust_score),
+          images:item_image!left(
+            file:file!inner(url),
             is_primary
           )
-        `)
-        .eq('category_id', currentItem.data.categoryId)
-        .eq('is_active', true)
-        .eq('status', 'available')
-        .neq('id', itemId)
-        .order('rating_average', { ascending: false })
+        `
+        )
+        .eq("category_id", currentItem.category_id)
+        .eq("is_active", true)
+        .eq("status", "available")
+        .neq("id", itemId)
+        .order("rating_average", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1, { foreignTable: "item_image" })
         .limit(limit);
 
       if (error) {
@@ -469,7 +328,7 @@ export class ItemService extends BaseService {
         data: DataMapper.toCamelCase(data || []),
       };
     } catch (error) {
-      console.error('Error getting similar items:', error);
+      console.error("Error getting similar items:", error);
       throw error;
     }
   }
@@ -477,29 +336,34 @@ export class ItemService extends BaseService {
   /**
    * Check item availability for given dates
    */
-  async checkAvailability(itemId: string, startDate: string, endDate: string): Promise<ApiResponse<boolean>> {
+  async checkAvailability(
+    itemId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<ApiResponse<boolean>> {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('booking')
-        .select('id')
-        .eq('item_id', itemId)
-        .in('booking_status', ['confirmed', 'in_progress'])
-        .or(`start_date.lte.${endDate},end_date.gte.${startDate}`)
-        .limit(1);
+      const { count, error } = await supabaseAdmin
+        .from("booking")
+        .select("*", { count: "exact", head: true })
+        .eq("item_id", itemId)
+        .in("booking_status", ["confirmed", "in_progress"])
+        .not("start_date", "gt", endDate)
+        .not("end_date", "lt", startDate);
 
       if (error) {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      const isAvailable = !data || data.length === 0;
-
+      const isAvailable = !count || count === 0;
       return {
         success: true,
         data: isAvailable,
-        message: isAvailable ? 'Item is available for the selected dates' : 'Item is not available for the selected dates',
+        message: isAvailable
+          ? "Item is available for the selected dates"
+          : "Item is not available for the selected dates",
       };
     } catch (error) {
-      console.error('Error checking availability:', error);
+      console.error("Error checking availability:", error);
       throw error;
     }
   }
@@ -507,10 +371,13 @@ export class ItemService extends BaseService {
   /**
    * Add item to user favorites
    */
-  async addToFavorites(itemId: string, userId: string): Promise<ApiResponse<any>> {
+  async addToFavorites(
+    itemId: string,
+    userId: string
+  ): Promise<ApiResponse<any>> {
     try {
       const { data, error } = await supabaseAdmin
-        .from('user_favorite')
+        .from("user_favorite")
         .insert({
           user_id: userId,
           item_id: itemId,
@@ -519,10 +386,11 @@ export class ItemService extends BaseService {
         .single();
 
       if (error) {
-        if (error.code === '23505') { // Unique constraint violation
+        if (error.code === "23505") {
+          // Unique constraint violation
           return {
             success: false,
-            error: 'Item is already in favorites',
+            error: "Item is already in favorites",
           };
         }
         throw new Error(`Database error: ${error.message}`);
@@ -531,10 +399,10 @@ export class ItemService extends BaseService {
       return {
         success: true,
         data: DataMapper.toCamelCase(data),
-        message: 'Item added to favorites',
+        message: "Item added to favorites",
       };
     } catch (error) {
-      console.error('Error adding to favorites:', error);
+      console.error("Error adding to favorites:", error);
       throw error;
     }
   }
@@ -542,13 +410,16 @@ export class ItemService extends BaseService {
   /**
    * Remove item from user favorites
    */
-  async removeFromFavorites(itemId: string, userId: string): Promise<ApiResponse<any>> {
+  async removeFromFavorites(
+    itemId: string,
+    userId: string
+  ): Promise<ApiResponse<any>> {
     try {
       const { error } = await supabaseAdmin
-        .from('user_favorite')
+        .from("user_favorite")
         .delete()
-        .eq('user_id', userId)
-        .eq('item_id', itemId);
+        .eq("user_id", userId)
+        .eq("item_id", itemId);
 
       if (error) {
         throw new Error(`Database error: ${error.message}`);
@@ -556,21 +427,27 @@ export class ItemService extends BaseService {
 
       return {
         success: true,
-        message: 'Item removed from favorites',
+        message: "Item removed from favorites",
       };
     } catch (error) {
-      console.error('Error removing from favorites:', error);
+      console.error("Error removing from favorites:", error);
       throw error;
     }
   }
 
   /**
-   * Record item view
+   * Record item view (fire and forget)
    */
-  async recordView(itemId: string, userId?: string, deviceId?: string, metadata?: any): Promise<void> {
+  async recordView(
+    itemId: string,
+    userId?: string,
+    deviceId?: string,
+    metadata?: any
+  ): Promise<void> {
     try {
-      await supabaseAdmin
-        .from('item_view')
+      // Insert view record (fire and forget)
+      supabaseAdmin
+        .from("item_view")
         .insert({
           item_id: itemId,
           user_id: userId || null,
@@ -581,14 +458,17 @@ export class ItemService extends BaseService {
         });
     } catch (error) {
       // Don't throw error for view recording failures
-      console.warn('Error recording item view:', error);
+      console.warn("Error recording item view:", error);
     }
   }
 
   /**
-   * Get item analytics
+   * Get item analytics with parallel queries
    */
-  async getItemAnalytics(itemId: string, userId: string): Promise<ApiResponse<any>> {
+  async getItemAnalytics(
+    itemId: string,
+    userId: string
+  ): Promise<ApiResponse<any>> {
     try {
       // Verify ownership
       const ownershipCheck = await this.verifyOwnership(itemId, userId);
@@ -596,38 +476,53 @@ export class ItemService extends BaseService {
         return ownershipCheck;
       }
 
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
       const [viewsData, bookingsData, reviewsData] = await Promise.all([
-        // Views in last 30 days
+        // Count views in last 30 days
         supabaseAdmin
-          .from('item_view')
-          .select('viewed_at')
-          .eq('item_id', itemId)
-          .gte('viewed_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
-        
-        // Bookings data
+          .from("item_view")
+          .select("*", { count: "exact", head: true })
+          .eq("item_id", itemId)
+          .gte("viewed_at", thirtyDaysAgo),
+
+        // Bookings data with aggregation
         supabaseAdmin
-          .from('booking')
-          .select('booking_status, created_at, total_rent')
-          .eq('item_id', itemId),
-        
-        // Reviews data
+          .from("booking")
+          .select("booking_status, total_rent")
+          .eq("item_id", itemId),
+
+        // Reviews count and average rating
         supabaseAdmin
-          .from('item_review')
-          .select('rating, created_at')
-          .eq('item_id', itemId)
+          .from("item_review")
+          .select("rating")
+          .eq("item_id", itemId),
       ]);
 
+      const completedBookings =
+        bookingsData.data?.filter((b) => b.booking_status === "completed") ||
+        [];
+      const totalEarnings =
+        bookingsData.data?.reduce((sum, b) => sum + (b.total_rent || 0), 0) ||
+        0;
+      const avgRating = reviewsData.data?.length
+        ? reviewsData.data.reduce((sum, r) => sum + r.rating, 0) /
+          reviewsData.data.length
+        : 0;
+
       const analytics = {
-        totalViews: viewsData.data?.length || 0,
+        totalViews: viewsData.count || 0,
         totalBookings: bookingsData.data?.length || 0,
-        completedBookings: bookingsData.data?.filter(b => b.booking_status === 'completed').length || 0,
-        totalEarnings: bookingsData.data?.reduce((sum, b) => sum + (b.total_rent || 0), 0) || 0,
-        averageRating: (reviewsData.data?.length || 0) > 0 
-          ? reviewsData.data!.reduce((sum, r) => sum + r.rating, 0) / reviewsData.data!.length 
-          : 0,
+        completedBookings: completedBookings.length,
+        totalEarnings,
+        averageRating: Math.round(avgRating * 100) / 100,
         totalReviews: reviewsData.data?.length || 0,
-        conversionRate: (viewsData.data?.length || 0) > 0 
-          ? (bookingsData.data?.length || 0) / (viewsData.data?.length || 1) * 100 
+        conversionRate: viewsData.count
+          ? Math.round(
+              ((bookingsData.data?.length || 0) / viewsData.count) * 10000
+            ) / 100
           : 0,
       };
 
@@ -636,7 +531,7 @@ export class ItemService extends BaseService {
         data: DataMapper.toCamelCase(analytics),
       };
     } catch (error) {
-      console.error('Error getting item analytics:', error);
+      console.error("Error getting item analytics:", error);
       throw error;
     }
   }
@@ -644,19 +539,22 @@ export class ItemService extends BaseService {
   /**
    * Verify item ownership
    */
-  private async verifyOwnership(itemId: string, userId: string): Promise<ApiResponse<boolean>> {
+  private async verifyOwnership(
+    itemId: string,
+    userId: string
+  ): Promise<ApiResponse<boolean>> {
     try {
       const { data, error } = await supabaseAdmin
-        .from('item')
-        .select('user_id')
-        .eq('id', itemId)
+        .from("item")
+        .select("user_id")
+        .eq("id", itemId)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return {
             success: false,
-            error: 'Item not found',
+            error: "Item not found",
           };
         }
         throw new Error(`Database error: ${error.message}`);
@@ -665,7 +563,7 @@ export class ItemService extends BaseService {
       if (data.user_id !== userId) {
         return {
           success: false,
-          error: 'You do not have permission to modify this item',
+          error: "You do not have permission to modify this item",
         };
       }
 
@@ -674,32 +572,41 @@ export class ItemService extends BaseService {
         data: true,
       };
     } catch (error) {
-      console.error('Error verifying ownership:', error);
+      console.error("Error verifying ownership:", error);
       throw error;
     }
   }
 
   /**
-   * Find all items with images and relations (for list views)
+   * Find all items with images and relations for list views
    */
-  async findAllWithImages(options: QueryOptions): Promise<PaginatedResponse<any>> {
+  async findAllWithImages(
+    options: QueryOptions
+  ): Promise<PaginatedResponse<any>> {
     try {
       const { page, limit, filters, orderBy, orderDirection } = options;
       const offset = (page - 1) * limit;
 
       let query = supabaseAdmin
-        .from('item')
-        .select(`
-          *,
-          category:categories(category_name),
-          location:location(city, state),
-          owner:users(full_name, avatar_url, trust_score),
-          images:item_image(
-            file:file(url, file_type),
+        .from("item")
+        .select(
+          `
+          id, title, description, condition, rent_price_per_day,
+          rating_average, rating_count, created_at, is_active, status,
+          category:categories!inner(id, category_name),
+          location:location!inner(id, city, state),
+          owner:users!inner(id, full_name, avatar_url, trust_score),
+          images:item_image!left(
+            file:file!inner(url, file_type),
             is_primary,
             display_order
           )
-        `, { count: 'exact' });
+        `,
+          { count: "exact" }
+        )
+        .eq("is_active", true)
+        .order("display_order", { ascending: true, foreignTable: "item_image" })
+        .limit(1, { foreignTable: "item_image" });
 
       // Apply filters
       if (filters) {
@@ -712,7 +619,7 @@ export class ItemService extends BaseService {
 
       // Apply ordering
       if (orderBy) {
-        query = query.order(orderBy, { ascending: orderDirection === 'asc' });
+        query = query.order(orderBy, { ascending: orderDirection === "asc" });
       }
 
       // Apply pagination
@@ -724,23 +631,10 @@ export class ItemService extends BaseService {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      // Sort images by primary first, then by display order for each item
-      const itemsWithSortedImages = (data || []).map(item => {
-        if (item.images) {
-          item.images.sort((a: any, b: any) => {
-            if (a.is_primary && !b.is_primary) return -1;
-            if (!a.is_primary && b.is_primary) return 1;
-            return a.display_order - b.display_order;
-          });
-        }
-        return item;
-      });
-
       const totalPages = Math.ceil((count || 0) / limit);
-
       return {
         success: true,
-        data: DataMapper.toCamelCase(itemsWithSortedImages),
+        data: DataMapper.toCamelCase(data || []),
         pagination: {
           page,
           limit,
@@ -752,6 +646,48 @@ export class ItemService extends BaseService {
       };
     } catch (error) {
       console.error(`Error in ${this.tableName} findAllWithImages:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get popular items
+   */
+  async getPopularItems(limit: number = 10): Promise<ApiResponse<any[]>> {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("item")
+        .select(
+          `
+          id, title, description, condition, rent_price_per_day,
+          rating_average, rating_count, created_at,
+          category:categories!inner(id, category_name),
+          location:location!inner(id, city, state),
+          owner:users!inner(id, full_name, avatar_url, trust_score),
+          images:item_image!left(
+            file:file!inner(url),
+            is_primary
+          )
+        `
+        )
+        .eq("is_active", true)
+        .eq("status", "available")
+        .gte("rating_count", 1)
+        .order("rating_average", { ascending: false })
+        .order("rating_count", { ascending: false })
+        .limit(1, { foreignTable: "item_image" })
+        .limit(limit);
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return {
+        success: true,
+        data: DataMapper.toCamelCase(data || []),
+      };
+    } catch (error) {
+      console.error("Error getting popular items:", error);
       throw error;
     }
   }

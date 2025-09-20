@@ -143,6 +143,7 @@ export interface ItemAnalyticsSummary {
 // Search and filter types
 export interface ItemSearchFilters {
   categoryId?: string;
+  city?: string;
   location?: {
     latitude: number;
     longitude: number;

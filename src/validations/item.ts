@@ -107,10 +107,11 @@ export const itemSearchByAddressSchema = z.object({
 // Item search validation
 export const itemSearchSchema = z.object({
   categoryId: uuidSchema.optional(),
+  city: z.string().min(2, 'City name must be at least 2 characters').max(100, 'City name too long').optional(),
   location: z.object({
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),
-    radius: z.number().int().min(5).max(100).default(25),
+    radius: z.number().int().min(5).max(500).default(25),
   }).optional(),
   priceRange: z.object({
     min: z.number().min(0).optional(),
@@ -149,16 +150,44 @@ export const categorySearchSchema = z.object({
 // Utility function for parsing search parameters
 export const validateSearchParams = (query: any) => {
   const parsed = { ...query };
-  
+
   // Parse numeric values
   if (parsed.page) parsed.page = parseInt(parsed.page);
   if (parsed.limit) parsed.limit = parseInt(parsed.limit);
+
+  // Handle nested location parameters from bracket notation (location[latitude], location[longitude], etc.)
+  if (parsed['location[latitude]'] || parsed['location[longitude]'] || parsed['location[radius]']) {
+    parsed.location = {
+      latitude: parsed['location[latitude]'] ? parseFloat(parsed['location[latitude]']) : undefined,
+      longitude: parsed['location[longitude]'] ? parseFloat(parsed['location[longitude]']) : undefined,
+      radius: parsed['location[radius]'] ? parseInt(parsed['location[radius]']) : undefined,
+    };
+    // Clean up the bracket notation keys
+    delete parsed['location[latitude]'];
+    delete parsed['location[longitude]'];
+    delete parsed['location[radius]'];
+  }
+
+  // Handle existing nested location object (if already parsed)
   if (parsed.location?.radius) parsed.location.radius = parseInt(parsed.location.radius);
   if (parsed.location?.latitude) parsed.location.latitude = parseFloat(parsed.location.latitude);
   if (parsed.location?.longitude) parsed.location.longitude = parseFloat(parsed.location.longitude);
+
+  // Handle nested priceRange parameters from bracket notation
+  if (parsed['priceRange[min]'] || parsed['priceRange[max]']) {
+    parsed.priceRange = {
+      min: parsed['priceRange[min]'] ? parseFloat(parsed['priceRange[min]']) : undefined,
+      max: parsed['priceRange[max]'] ? parseFloat(parsed['priceRange[max]']) : undefined,
+    };
+    // Clean up the bracket notation keys
+    delete parsed['priceRange[min]'];
+    delete parsed['priceRange[max]'];
+  }
+
+  // Handle existing nested priceRange object (if already parsed)
   if (parsed.priceRange?.min) parsed.priceRange.min = parseFloat(parsed.priceRange.min);
   if (parsed.priceRange?.max) parsed.priceRange.max = parseFloat(parsed.priceRange.max);
-  
+
   // Parse arrays
   if (parsed.condition && typeof parsed.condition === 'string') {
     parsed.condition = parsed.condition.split(',');
@@ -166,6 +195,5 @@ export const validateSearchParams = (query: any) => {
   if (parsed.deliveryMode && typeof parsed.deliveryMode === 'string') {
     parsed.deliveryMode = parsed.deliveryMode.split(',');
   }
-  
   return itemSearchSchema.parse(parsed);
 };

@@ -190,9 +190,6 @@ supabase storage cp s3://images/test-image.jpg ./downloaded-image.jpg
 ```bash
 # Link to your production project (one-time)
 supabase link --project-ref your-project-ref
-
-# Or link using project URL
-supabase link --project-url https://your-project.supabase.co
 ```
 
 ### Database Operations

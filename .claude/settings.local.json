@@ -27,7 +27,8 @@
       "Bash(curl:*)",
       "Bash(npx api install:*)",
       "Bash(pkill:*)",
-      "Bash(npx @api/cli@latest install \"@sandbox-docs/v1.0#17aqjd26md5vdo3n\" --lang typescript)"
+      "Bash(npx @api/cli@latest install \"@sandbox-docs/v1.0#17aqjd26md5vdo3n\" --lang typescript)",
+      "Bash(supabase status:*)"
     ],
     "deny": [],
     "ask": []

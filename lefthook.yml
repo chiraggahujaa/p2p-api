@@ -98,7 +98,7 @@ pre-commit:
               
               # Check if rollback file has proper header comments
               if [ -n "$rollback_content" ]; then
-                if ! echo "$rollback_content" | grep -q "-- Rollback:"; then
+                if ! echo "$rollback_content" | grep -q "^-- Rollback:"; then
                   echo "❌ Rollback file missing proper header: $(basename "$rollback_file")"
                   echo "Expected header format:"
                   echo "-- Rollback: [Description matching the migration]"
