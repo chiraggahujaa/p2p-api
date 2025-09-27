@@ -12,7 +12,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "lint": "echo 'No linter configured - skipping'",
     "typecheck": "tsc --noEmit",
-    "postinstall": "if [ -d .git ]; then lefthook install; fi",
+    "postinstall": "test -d .git && lefthook install || echo 'Skipping lefthook install - not a git repository'",
 
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
