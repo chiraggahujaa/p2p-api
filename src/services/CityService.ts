@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 import { OpenWeatherCityProvider, type CityRecord as OpenWeatherCityRecord } from './cityProviders/OpenWeatherCityProvider.js';
-import indianCitiesData from '../data/indian-cities.json';
+import indianCitiesData from '../data/indian-cities.json' with { type: 'json' };
 
 type City = {
   name: string;
